@@ -1,0 +1,36 @@
+#version 400 core
+
+layout(location = 0) in vec3 position;
+in vec2 textureCoords;
+in vec3 normals;
+
+out vec2 pass_textureCoords;
+out vec3 surfaceNormal;
+out vec3 lightNormal;
+out vec3 toCameraVector;
+out float visibility;
+
+uniform mat4 transformationMatrix;
+uniform mat4 projectionMatrix;
+uniform mat4 viewMatrix;
+uniform vec3 lightPosition;
+
+const float fogDensity = 0.00007;
+const float fogGradient = 1.5;
+
+void main(void)
+{
+    vec4 worldPos = transformationMatrix * vec4(position, 1.0);
+    vec4 projectionToCam = viewMatrix * worldPos;
+    gl_Position = projectionMatrix * projectionToCam;
+    pass_textureCoords = textureCoords * 40.0;
+
+    surfaceNormal = (transformationMatrix * vec4(normals, 0.0)).xyz;
+    lightNormal = lightPosition - worldPos.xyz;
+    toCameraVector = (inverse(viewMatrix) * vec4(0.0,0.0,0.0,1.0)).xyz - worldPos.xyz;
+
+     float distance = length(projectionToCam.xyz);
+     visibility = exp(-pow(distance * fogDensity, fogGradient));
+     visibility = clamp(visibility, 0.0, 1.0);
+
+}

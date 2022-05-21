@@ -1,0 +1,48 @@
+#version 400 core
+
+in vec2 pass_textureCoords;
+in vec3 surfaceNormal;
+in vec3 lightNormal;
+in vec3 toCameraVector;
+in float visibility;
+
+layout(location = 0) out vec4 out_Color;
+
+uniform sampler2D textureSampler;
+uniform vec3 lightColor;
+uniform float shinyDamper;
+uniform float reflectivity;
+uniform vec3 skyColor;
+
+void main(void)
+{
+    vec3 unitNormal = normalize(surfaceNormal);
+    vec3 unitLight = normalize(lightNormal);
+
+    float dotProduct = dot(unitNormal, unitLight);
+    float brightness = max(dotProduct, 0.3);
+    vec3 light = brightness  * lightColor;
+
+    //reflected space
+    vec3 unitCameraVector = normalize(toCameraVector);
+    vec3 lightDirection = -unitLight;
+    vec3 reflectedVector = reflect(lightDirection, unitNormal);
+
+    float dotP2 = dot(reflectedVector, unitCameraVector); //calculating the reflected space
+    dotP2 = max(dotP2, 0);
+    float reflectedLight = pow(dotP2 / 2 , shinyDamper);   //The reflections. If the value is too high the reflected light will be too much and the color of the reflected space will be white. So will happen if the opposite happens.
+    vec3 dampedColor = reflectedLight * lightColor;
+
+
+    //color
+    vec4 textureColor = texture(textureSampler, pass_textureCoords);
+    if(textureColor.a < 0.5){  //adding transparency by checking the alpha of the color
+           discard;
+        }
+
+
+    //if u want autumn instead of adding the textureColor add this "vec4(textureColor.x + 0.1, textureColor.y, textureColor.z, 1)"
+    //if u want Tsukuyomi: vec4(255/ 255, 255 / 255, 255 / 255, 1)
+    out_Color = vec4(light,1.0) * vec4(textureColor.x, textureColor.y, textureColor.z, 1)  + vec4(dampedColor, 1.0); //output color
+    out_Color = mix(vec4(vec3(skyColor.x,skyColor.y,skyColor.z), 1.0), out_Color, visibility);
+}
