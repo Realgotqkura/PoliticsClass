@@ -21,11 +21,13 @@ import com.realgotqkura.utilities.RotationVector;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.glfw.GLFWKeyCallback;
 import org.lwjgl.system.CallbackI;
+import org.lwjgl.system.MathUtil;
 import org.lwjglx.util.vector.Vector2f;
 import org.lwjglx.util.vector.Vector3f;
 
 import java.awt.*;
 import java.io.File;
+import java.math.MathContext;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
@@ -48,7 +50,6 @@ public class Main {
     public static Entity holdedEntity;
     private TexturedModels models;
     public static FontType primaryFont;
-
 
 
 
@@ -85,7 +86,7 @@ public class Main {
         RawModel playerModel = loader.loadtoVao(data.getVertices(), data.getTextureCoords(), data.getNormals(), data.getIndices());
         ModelTexture playerTexture = new ModelTexture(loader.loadTexture("metal"));
         player = new Player(new TexturedModel(playerModel, playerTexture, "player"), new Location(1,5,1),1,1,1,1, loader);
-        Entity craftingTable = new Entity(models.craftingTable(), player.getPosition(), 180,0,180, 2);
+        //Entity craftingTable = new Entity(models.craftingTable(), player.getPosition(), 180,0,180, 2);
         EnemyEntity trumpEnemy = new EnemyEntity(models.trumpEnemy(), new Location(player.getPosition().getX() + 10, player.getPosition().getY(), player.getPosition().getZ() + 10), 180,0,180, 4);
         for(Entity entity : presets.randomPreset("heightmap")){
             entities.add(entity);
@@ -93,7 +94,7 @@ public class Main {
         for(Entity entity : Entity.entities){
             renderer.addEntity(entity);
         }
-        holdedEntity = craftingTable;
+        //holdedEntity = craftingTable;
         GUIS.initGUIs();
         System.out.println(Entity.enemies);
 
@@ -107,7 +108,7 @@ public class Main {
     public void run(){
         while(!DisplayManager.shouldClose()){
             //game loop and rendering
-
+            ray.update();
             for(Terrain terrain : terrains){
                 if(terrain.getX() <= player.getPosition().getX()) {
                     if(terrain.getX() + Terrain.SIZE > player.getPosition().getX()) {
@@ -121,20 +122,42 @@ public class Main {
                     }
                 }
             }
+            System.out.println(ray.getCurrentRay());
             for(EnemyEntity enemy : Entity.enemies){
                 enemy.pathFindertick(player, enemy);
             }
+            List<Projectile> deleteCache = new ArrayList<>();
+            for(Projectile projectile : Entity.projectiles){
+                //float yaw2 = (float) Math.atan2(ray.getCurrentRay().getX(), -ray.getCurrentRay().z);
+                Vector2f dir = projectile.getDirection();
+                float z = (float) (projectile.getPosition().getZ() + 0 * Math.cos(Math.toRadians(dir.x - 90)) - 1 * Math.cos(Math.toRadians(dir.x)));
+                float x = (float) (projectile.getPosition().getX() - 0 * Math.sin(Math.toRadians(dir.x - 90)) - 1 * Math.sin(Math.toRadians(dir.x)));
+                float y = (float) (projectile.getPosition().getY() - 0 * Math.sin(Math.toRadians(dir.y - 90)) - 1 * Math.sin(Math.toRadians(dir.y)));
+                projectile.setPosition(new Location(x, y, z));
+                //projectile.setPosition(new Location(projectile.getPosition().getX() / (float) (Math.sin(ray.getCurrentRay().x) + (index / 7F)), projectile.getPosition().getY(), projectile.getPosition().getZ() * (float)(Math.cos(ray.getCurrentRay().z) + (index / 6F))));
+                if(projectile.getFlyingDuration() <= 0){
+                    renderer.entities.get(projectile.getModel()).remove(projectile);
+                    Entity.entities.remove(projectile);
+                    deleteCache.add(projectile);
+                }else{
+                    projectile.setFlyingDuration(projectile.getFlyingDuration() - 1);
+                }
+            }
+            for(Projectile e : deleteCache){
+                Entity.projectiles.remove(e);
+            }
+            deleteCache.clear();
             for(Entity entity : Entity.deleteEntityCache){
                 renderer.entities.get(entity.getModel()).remove(entity);
                 Entity.removeEntity(entity);
                 try{
+                    Entity.projectiles.remove(entity);
                     Entity.enemies.remove(entity);
                 }catch(Exception ignored){
 
                 }
             }
             renderer.render(light, camera);
-            ray.update();
             guiRenderer.render();
             //System.out.println(player.getRotation().toString());
             if(holdedEntity != null){
@@ -167,7 +190,7 @@ public class Main {
             GUIS.clickPlayerInventory();
             //light.setPosition(camera.getPosition());
             //System.out.println(MathHelper.distanceBetweenObjects(new Location(1,5,1), camera.getPosition()));
-            //System.out.println(camera.getPosition());
+            //System.out.println(camera.getPosition().toString());
             TextMaster.render();
             DisplayManager.updateDisplay();
         }

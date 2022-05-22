@@ -17,6 +17,7 @@ public class Entity {
     public static List<Entity> entities = new ArrayList<>();
     public static List<EnemyEntity> enemies = new ArrayList<>();
     public static List<Entity> deleteEntityCache = new ArrayList<>();
+    public static List<Projectile> projectiles = new ArrayList<>();
 
 
     public Entity(TexturedModel model, Location loc, float rotX, float rotY, float rotZ, float scale) {

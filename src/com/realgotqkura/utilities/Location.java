@@ -63,5 +63,14 @@ public class Location {
         this.z = nZ;
     }
 
+    public String toString(){
+        return "Location[" + this.x + ", " + this.y + ", " + this.z + "]";
+    }
+
+    public void subtract(Location loc2){
+        this.x -= loc2.getX();
+        this.y -= loc2.getY();
+        this.z -= loc2.getZ();
+    }
 
 }

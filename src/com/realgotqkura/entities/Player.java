@@ -4,6 +4,7 @@ import com.realgotqkura.engine.DisplayManager;
 import com.realgotqkura.engine.Loader;
 import com.realgotqkura.engine.MasterRenderer;
 import com.realgotqkura.engine.testing.TexturedModels;
+import com.realgotqkura.engine.testing.VertexListsOfShapes;
 import com.realgotqkura.fontMeshCreator.GUIText;
 import com.realgotqkura.fontRendering.TextMaster;
 import com.realgotqkura.guis.GUIRenderer;
@@ -16,9 +17,11 @@ import com.realgotqkura.terrain.Terrain;
 import com.realgotqkura.utilities.*;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.glfw.GLFW;
+import org.lwjgl.opengl.GL11;
 import org.lwjglx.input.Mouse;
 import org.lwjglx.opengl.Display;
 import org.lwjglx.util.vector.Vector2f;
+import org.lwjglx.util.vector.Vector3f;
 import org.w3c.dom.Text;
 
 import java.io.FileNotFoundException;
@@ -316,29 +319,15 @@ public class Player extends Entity{
 
                     }
                 }else{
+
                     if(Main.holdedEntity == null){
+                        /*
                         for(Entity entity : Entity.entities){
                             if(MathHelper.isInside(Location.Vec3toLocation(Main.ray.getCurrentTerrainPoint()),
-                                    new Location(entity.getPosition().getX() - 2, entity.getPosition().getY() - entity.getScale() - 2, entity.getPosition().getZ() -2),
-                                    new Location(entity.getPosition().getX() + 2, entity.getPosition().getY() + entity.getScale() + 2, entity.getPosition().getZ() + 2))){
+                                    new Location(entity.getPosition().getX() - 2, entity.getPosition().getY() + (entity.getScale() * 3), entity.getPosition().getZ()  - 2),
+                                    new Location(entity.getPosition().getX() + 2, entity.getPosition().getY() - (entity.getScale() * 3), entity.getPosition().getZ() + 2))) {
                                 //On click it adds the icon version of this material in the inventory
                                 switch(entity.getModel().getName()){
-                                    case "tree":
-                                        for(int i = 0; i < GUIS.slotTextures.size(); i++){
-                                            if(GUIS.slotTextures.get(i) == null){
-                                                GUIS.slotTextures.put(i, new GuiTexture(loader.loadTexture("TreeSlotTxt"),GUIS.playerInventoryGUIs.get(i + 1).getPosition(), new Vector2f(0.03F,0.05F), new RotationVector(0,0,0), "Tree"));
-                                                return;
-                                            }
-                                        }
-                                        break;
-                                    case "rocks":
-                                        for(int i = 0; i < GUIS.slotTextures.size(); i++){
-                                            if(GUIS.slotTextures.get(i) == null){
-                                                GUIS.slotTextures.put(i, new GuiTexture(loader.loadTexture("RockSlotTxt"),GUIS.playerInventoryGUIs.get(i + 1).getPosition(), new Vector2f(0.03F,0.05F), new RotationVector(0,0,0), "Rock"));
-                                                return;
-                                            }
-                                        }
-                                        break;
                                     case "TrumpEnemy":
                                         Entity.deleteEntityCache.add(entity);
 
@@ -356,11 +345,15 @@ public class Player extends Entity{
                                         break;
 
                                 }
-
-
                                 Main.renderer.addEntity(entity);
                             }
                         }// end of for loop
+
+                     */
+                        Projectile projectile = new Projectile(models.craftingTable(), player.getPosition(), 0,0,0, 0.5F, new Vector2f(player.getRotY(), player.getRotZ()), 60);
+                        Main.renderer.addEntity(projectile);
+
+
                         if(waveEnded){
                             System.out.println("NIFGA");
                             for(int i = 0; i < (waveTest * 1.5) + 5; i++){

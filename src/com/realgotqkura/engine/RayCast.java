@@ -1,6 +1,8 @@
 package com.realgotqkura.engine;
 
 import com.realgotqkura.entities.Camera;
+import com.realgotqkura.entities.EnemyEntity;
+import com.realgotqkura.entities.Entity;
 import com.realgotqkura.terrain.Terrain;
 import com.realgotqkura.utilities.Location;
 import com.realgotqkura.utilities.MathHelper;
@@ -17,7 +19,7 @@ import java.util.List;
 public class RayCast {
 
     private static final int RECURSION_COUNT = 200;
-    private static final float RAY_RANGE = 600;
+    private static final float RAY_RANGE = 100;
 
     private Vector3f currentRay = new Vector3f();
 
@@ -105,6 +107,7 @@ public class RayCast {
             } else {
                 return null;
             }
+
         }
         if (intersectionInRange(start, half, ray)) {
             return binarySearch(count + 1, start, half, ray);
