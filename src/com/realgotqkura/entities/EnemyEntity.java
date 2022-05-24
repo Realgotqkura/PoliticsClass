@@ -20,14 +20,16 @@ public class EnemyEntity extends Entity{
     private Location loc;
     private float rX, rY, rZ;
     private float scale;
+    private int health;
 
-    public EnemyEntity(TexturedModel model, Location loc, float rotX, float rotY, float rotZ, float scale) {
+    public EnemyEntity(TexturedModel model, Location loc, float rotX, float rotY, float rotZ, float scale, int health) {
         super(model, loc, rotX, rotY, rotZ, scale);
         model = this.model;
         loc = this.loc;
         rX = rotX;
         rY = rotY;
         rZ = rotZ;
+        this.health = health;
         scale = this.scale;
         enemies.add(this); //Might cause problems
     }
@@ -84,6 +86,20 @@ public class EnemyEntity extends Entity{
         return false;
     }
 
+    private boolean checkProjectileCollision(Entity entity){
+        for(Projectile projectile : Entity.projectiles){
+            if(MathHelper.isInside(projectile.getPosition(),
+                    new Location(entity.getPosition().getX() - 2, entity.getPosition().getY() + (entity.getScale() * 2), entity.getPosition().getZ()  - 2),
+                    new Location(entity.getPosition().getX() + 2, entity.getPosition().getY() - (entity.getScale() * 2), entity.getPosition().getZ() + 2))){
+                Main.renderer.entities.get(projectile.getModel()).remove(projectile);
+                Entity.entities.remove(projectile);
+                Entity.projectiles.remove(projectile);
+                return true;
+            }
+        }
+        return false;
+    }
+
     public void pathFindertick(Entity target, Entity enemy){
         float deltaX = 0.11F, deltaZ = 0.11F;
         Location enemyLoc = enemy.getPosition();
@@ -99,6 +115,12 @@ public class EnemyEntity extends Entity{
             return;
         }
         //Moving enemy
+        if(checkProjectileCollision(enemy)){
+            this.health--;
+            if(this.health <= 0){
+                Entity.deleteEntityCache.add(enemy);
+            }
+        }
         if(checkPlayerCollision(enemy)){
             Entity.deleteEntityCache.add(enemy);
             Player.health--;

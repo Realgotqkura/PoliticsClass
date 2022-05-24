@@ -8,7 +8,15 @@ out vec4 out_Color;
 uniform vec3 color;
 uniform sampler2D fontAtlas;
 
+const float characterWidth = 0.46;
+const float characterPadding = 0.09;
+
 void main(void){
 
-     out_Color = vec4(color, texture(fontAtlas, pass_textureCoords).a);
+     float distance = 1.0 -  texture(fontAtlas, pass_textureCoords).a;
+     float alpha = 1 - smoothstep(characterWidth, characterWidth + characterPadding, distance);
+
+
+     out_Color = vec4(color, alpha);
+
 }

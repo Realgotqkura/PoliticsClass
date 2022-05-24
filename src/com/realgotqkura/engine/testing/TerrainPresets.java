@@ -55,7 +55,7 @@ public class TerrainPresets {
                 float y = terrain.getHeightAtLocation(x,z);
                 entities.add( new Entity(rockModel, new Location(x,y,z), 180,0,180,1));
             }
-            for(int i = 0; i < 10000; i++) {
+            for(int i = 0; i < 7500; i++) {
                 float x = r.nextFloat() * Terrain.SIZE + terrain.getX();
                 float z = r.nextFloat() * Terrain.SIZE + terrain.getZ();
                 float rx = ThreadLocalRandom.current().nextInt(160, 200 + 1);

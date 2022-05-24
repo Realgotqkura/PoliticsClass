@@ -28,6 +28,7 @@ import java.io.FileNotFoundException;
 import java.nio.DoubleBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -43,6 +44,7 @@ public class Player extends Entity{
     private static final float SIDEWAYS_SPEED = 20;
     private static final int GRAVITY = -50;
     private static final int JUMP_POWER = 30;
+
 
     public static boolean insideAGUI = false;
     private int currentWalkSpeed;
@@ -174,7 +176,6 @@ public class Player extends Entity{
             if(MathHelper.clamp(-1,1, cursor.getPosition().y) == 2){
                 cursor.setPosition(new Vector2f(cursor.getPosition().x,-0.9999F));
             }
-
         }
 
         //reset
@@ -350,8 +351,10 @@ public class Player extends Entity{
                         }// end of for loop
 
                      */
-                        Projectile projectile = new Projectile(models.craftingTable(), player.getPosition(), 0,0,0, 0.5F, new Vector2f(player.getRotY(), player.getRotZ()), 60);
-                        Main.renderer.addEntity(projectile);
+                        if(Entity.projectiles.size() <= 5){
+                            Projectile projectile = new Projectile(models.craftingTable(), player.getPosition(), 0,0,0, 0.5F, new Vector2f(player.getRotY(), player.getRotZ()), 60);
+                            Main.renderer.addEntity(projectile);
+                        }
 
 
                         if(waveEnded){
@@ -359,7 +362,7 @@ public class Player extends Entity{
                             for(int i = 0; i < (waveTest * 1.5) + 5; i++){
                                 int randomX = ThreadLocalRandom.current().nextInt(-100,100 + 1);
                                 int randomZ = ThreadLocalRandom.current().nextInt(-100, 100 + 1);
-                                EnemyEntity enemyEntity = new EnemyEntity(models.trumpEnemy(), new Location(this.getPosition().getX() + randomX, this.getPosition().getY() + 5, this.getPosition().getZ() + randomZ), 180,0,180, 4);
+                                EnemyEntity enemyEntity = new EnemyEntity(models.trumpEnemy(), new Location(this.getPosition().getX() + randomX, this.getPosition().getY() + 5, this.getPosition().getZ() + randomZ), 180,0,180, 4, 10);
                                 Main.renderer.addEntity(enemyEntity);
                             }
                             waveEnded = false;

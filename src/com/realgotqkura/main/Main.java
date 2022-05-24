@@ -14,10 +14,7 @@ import com.realgotqkura.models.RawModel;
 import com.realgotqkura.models.TexturedModel;
 import com.realgotqkura.terrain.Terrain;
 import com.realgotqkura.textures.ModelTexture;
-import com.realgotqkura.utilities.Input;
-import com.realgotqkura.utilities.LWColor;
-import com.realgotqkura.utilities.Location;
-import com.realgotqkura.utilities.RotationVector;
+import com.realgotqkura.utilities.*;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.glfw.GLFWKeyCallback;
 import org.lwjgl.system.CallbackI;
@@ -60,9 +57,9 @@ public class Main {
         renderer = new MasterRenderer();
         camera = new Camera();
         TextMaster.init(loader);
-        primaryFont = new FontType(loader.loadTexture("font"), new File("res/font.fnt"));
+        primaryFont = new FontType(loader.loadTexture("newFont"), new File("res/newFont.fnt"));
         GUIText text = new GUIText("Wave:",4 , primaryFont, new Vector2f(0,0), 0.5F, false);
-        GUIText textHP = new GUIText("Health: " + Player.MAX_HEALTH,4 , primaryFont, new Vector2f(0F,0.1F), 0.5F, false);
+        GUIText textHP = new GUIText("Health: " + Player.MAX_HEALTH,3, primaryFont, new Vector2f(0F,0.1F), 0.5F, false);
 
         presets = new TerrainPresets(loader);
         guiRenderer = new GUIRenderer(loader);
@@ -87,7 +84,7 @@ public class Main {
         ModelTexture playerTexture = new ModelTexture(loader.loadTexture("metal"));
         player = new Player(new TexturedModel(playerModel, playerTexture, "player"), new Location(1,5,1),1,1,1,1, loader);
         //Entity craftingTable = new Entity(models.craftingTable(), player.getPosition(), 180,0,180, 2);
-        EnemyEntity trumpEnemy = new EnemyEntity(models.trumpEnemy(), new Location(player.getPosition().getX() + 10, player.getPosition().getY(), player.getPosition().getZ() + 10), 180,0,180, 4);
+        EnemyEntity trumpEnemy = new EnemyEntity(models.trumpEnemy(), new Location(player.getPosition().getX() + 10, player.getPosition().getY(), player.getPosition().getZ() + 10), 180,0,180, 4, 10);
         for(Entity entity : presets.randomPreset("heightmap")){
             entities.add(entity);
         }
@@ -123,8 +120,10 @@ public class Main {
                 }
             }
             System.out.println(ray.getCurrentRay());
-            for(EnemyEntity enemy : Entity.enemies){
-                enemy.pathFindertick(player, enemy);
+            if(!player.isInsideAGUI()){
+                for(EnemyEntity enemy : Entity.enemies){
+                    enemy.pathFindertick(player, enemy);
+                }
             }
             List<Projectile> deleteCache = new ArrayList<>();
             for(Projectile projectile : Entity.projectiles){
@@ -135,6 +134,7 @@ public class Main {
                 float y = (float) (projectile.getPosition().getY() - 0 * Math.sin(Math.toRadians(dir.y - 90)) - 1 * Math.sin(Math.toRadians(dir.y)));
                 projectile.setPosition(new Location(x, y, z));
                 //projectile.setPosition(new Location(projectile.getPosition().getX() / (float) (Math.sin(ray.getCurrentRay().x) + (index / 7F)), projectile.getPosition().getY(), projectile.getPosition().getZ() * (float)(Math.cos(ray.getCurrentRay().z) + (index / 6F))));
+
                 if(projectile.getFlyingDuration() <= 0){
                     renderer.entities.get(projectile.getModel()).remove(projectile);
                     Entity.entities.remove(projectile);
@@ -181,7 +181,7 @@ public class Main {
                 for(int i = 0; i < (Player.waveTest * 1.5) + 5; i++){
                     int randomX = ThreadLocalRandom.current().nextInt(-100,100 + 1);
                     int randomZ = ThreadLocalRandom.current().nextInt(-100, 100 + 1);
-                    EnemyEntity enemyEntity = new EnemyEntity(models.trumpEnemy(), new Location(Player.player.getPosition().getX() + randomX, Player.player.getPosition().getY() + 5, Player.player.getPosition().getZ() + randomZ), 180,0,180, 4);
+                    EnemyEntity enemyEntity = new EnemyEntity(models.trumpEnemy(), new Location(Player.player.getPosition().getX() + randomX, Player.player.getPosition().getY() + 5, Player.player.getPosition().getZ() + randomZ), 180,0,180, 4,10);
                     Main.renderer.addEntity(enemyEntity);
                 }
                 Player.waveEnded = false;
