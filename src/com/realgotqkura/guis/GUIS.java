@@ -63,7 +63,9 @@ public class GUIS {
             slotTextures.put(i, null);
         }
 
-
+        slotTextures.put(42, new GuiTexture(Main.loader.loadTexture("NinoResized"), playerInventoryGUIs.get(42).getPosition(), new Vector2f(0.05F, 0.06F), new RotationVector(0,0,0), "Nino"));
+        slotTextures.put(41, new GuiTexture(Main.loader.loadTexture("MitkoResized"), playerInventoryGUIs.get(41).getPosition(), new Vector2f(0.05F, 0.06F), new RotationVector(0,0,0), "Nino"));
+        slotTextures.put(40, new GuiTexture(Main.loader.loadTexture("VladiResized"), playerInventoryGUIs.get(40).getPosition(), new Vector2f(0.05F, 0.06F), new RotationVector(0,0,0), "Nino"));
     }
 
     public static void closePlayerInventory(){

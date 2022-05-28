@@ -15,10 +15,19 @@ public class TexturedModels {
         this.loader = loader;
     }
 
-    public TexturedModel craftingTable(){
-        ModelTexture table = new ModelTexture(loader.loadTexture("CraftingTableTex"));
+
+    public TexturedModel shuriken(){
+        ModelTexture table = new ModelTexture(loader.loadTexture("metal"));
         table.setTransparency(true);
         table.setFakeLight(true);
+        ModelData data = OBJLoader.loadOBJModel("shuriken");
+        return new TexturedModel(loader.loadtoVao(data.getVertices(),data.getTextureCoords(),data.getNormals(),data.getIndices()), table, "CraftingTable");
+    }
+
+    public TexturedModel craftingTable(){
+        ModelTexture table = new ModelTexture(loader.loadTexture("CraftingTableTex"));
+        //table.setTransparency(true);
+        //table.setFakeLight(true);
         ModelData data = OBJLoader.loadOBJModel("CraftingTable");
         return new TexturedModel(loader.loadtoVao(data.getVertices(),data.getTextureCoords(),data.getNormals(),data.getIndices()), table, "CraftingTable");
     }

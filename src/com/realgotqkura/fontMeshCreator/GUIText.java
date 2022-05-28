@@ -1,7 +1,9 @@
 package com.realgotqkura.fontMeshCreator;
 
 
+import com.realgotqkura.entities.Player;
 import com.realgotqkura.fontRendering.TextMaster;
+import com.realgotqkura.main.Main;
 import org.lwjglx.util.vector.Vector2f;
 import org.lwjglx.util.vector.Vector3f;
 
@@ -139,7 +141,16 @@ public class GUIText {
 		this.vertexCount = verticesCount;
 	}
 
-	public void replaceText(GUIText oldText, String newText){
+	//Param contains: The text u wanna replace add the string that it contains
+	public static void replaceText(String contains, String newText){
+		GUIText oldText = null;
+		for(GUIText text : TextMaster.texts.get(Main.primaryFont)){
+			if(text.getText().contains(contains)){
+				oldText = text;
+				break;
+			}
+		}
+		assert oldText != null;
 		GUIText nText = new GUIText(newText, oldText.getFontSize(), oldText.getFont(), oldText.getPosition(), oldText.getMaxLineSize(), oldText.isCentered());
 		TextMaster.removeText(oldText);
 	}

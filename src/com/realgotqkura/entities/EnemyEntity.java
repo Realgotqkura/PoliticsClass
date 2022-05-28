@@ -100,6 +100,53 @@ public class EnemyEntity extends Entity{
         return false;
     }
 
+
+    public void tick(Entity enemy){
+        if(checkProjectileCollision(enemy)){
+            this.health--;
+            if(this.health <= 0){
+                Entity.deleteEntityCache.add(enemy);
+                if(Player.invisible){
+                    Player.playerKills++;
+                }
+                if(Player.abilityOnCooldown && !Player.invisible){
+                    Player.cooldownKills++;
+                    GUIText.replaceText("Ability", "Ability (E): " + Player.ability + " (Cooldown " + (5 - Player.cooldownKills) + " kills left)");
+                }
+                switch(Player.playableCharacter){
+                    case "Nino":
+                        if(Player.playerKills >= 2){
+                            Player.invisible = false;
+                            Player.playerKills = 0;
+                        }else if(Player.cooldownKills >= 5){
+                            Player.cooldownKills = 0;
+                            GUIText.replaceText("Ability", "Ability (E): " + Player.ability + " (Ready)");
+                            Player.abilityOnCooldown = false;
+                        }
+                        break;
+                    case "Mitko":
+                         if(Player.cooldownKills >= 5){
+                            Player.cooldownKills = 0;
+                            GUIText.replaceText("Ability", "Ability (E): " + Player.ability + " (Ready)");
+                            Player.abilityOnCooldown = false;
+                        }
+                        break;
+                }
+            }
+        }
+        if(checkPlayerCollision(enemy)){
+            Entity.deleteEntityCache.add(enemy);
+            Player.health--;
+            GUIText.replaceText("Health: ", "Health: " + Player.health);
+            if(Player.health == 0){
+                Player.health = Player.MAX_HEALTH;
+                GUIText.replaceText("Wave: ", "Wave: " + 0);
+                Player.waveTest = 0;
+                GUIText.replaceText("Health: ", "Health: " + Player.MAX_HEALTH);
+            }
+        }
+    }
+
     public void pathFindertick(Entity target, Entity enemy){
         float deltaX = 0.11F, deltaZ = 0.11F;
         Location enemyLoc = enemy.getPosition();
@@ -114,39 +161,7 @@ public class EnemyEntity extends Entity{
         if(MathHelper.distanceBetweenObjects(enemyLoc, targetLoc) < 0.2){
             return;
         }
-        //Moving enemy
-        if(checkProjectileCollision(enemy)){
-            this.health--;
-            if(this.health <= 0){
-                Entity.deleteEntityCache.add(enemy);
-            }
-        }
-        if(checkPlayerCollision(enemy)){
-            Entity.deleteEntityCache.add(enemy);
-            Player.health--;
-            for(GUIText text : TextMaster.texts.get(Main.primaryFont)){
-                if(text.getText().contains("Health:")){
-                    text.replaceText(text, "Health: " + Player.health);
-                    break;
-                }
-            }
-            if(Player.health == 0){
-                Player.health = Player.MAX_HEALTH;
-                for(GUIText text : TextMaster.texts.get(Main.primaryFont)){
-                    if(text.getText().contains("Wave:")){
-                        text.replaceText(text, "Wave: " + 0);
-                        Player.waveTest = 0;
-                        break;
-                    }
-                }
-                for(GUIText text : TextMaster.texts.get(Main.primaryFont)){
-                    if(text.getText().contains("Health:")){
-                        text.replaceText(text, "Health: " + Player.MAX_HEALTH);
-                        break;
-                    }
-                }
-            }
-        }
+
        else if(!collisionCheck(enemy)){
            x = enemyLoc.getX() + deltaX;
            z = enemyLoc.getZ() + deltaZ;

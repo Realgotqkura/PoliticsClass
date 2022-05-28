@@ -3,7 +3,6 @@ package com.realgotqkura.entities;
 import com.realgotqkura.models.TexturedModel;
 import com.realgotqkura.utilities.Location;
 import org.lwjglx.util.vector.Vector2f;
-import org.lwjglx.util.vector.Vector3f;
 
 public class Projectile extends Entity{
 
@@ -30,5 +29,13 @@ public class Projectile extends Entity{
 
     public void setFlyingDuration(int duration){
         this.flyingDuration = duration;
+    }
+
+    public void setVelocity(Vector2f dir){
+        float z = (float) (this.getPosition().getZ() + 0 * Math.cos(Math.toRadians(dir.x - 90)) - 1 * Math.cos(Math.toRadians(dir.x)));
+        float x = (float) (this.getPosition().getX() - 0 * Math.sin(Math.toRadians(dir.x - 90)) - 1 * Math.sin(Math.toRadians(dir.x)));
+        float y = (float) (this.getPosition().getY() - 0 * Math.sin(Math.toRadians(dir.y - 90)) - 1 * Math.sin(Math.toRadians(dir.y)));
+        this.setPosition(new Location(x, y, z));
+        this.setRotZ(this.getRotZ()+10);
     }
 }

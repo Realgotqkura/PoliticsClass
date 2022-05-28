@@ -58,7 +58,7 @@ public class Main {
         camera = new Camera();
         TextMaster.init(loader);
         primaryFont = new FontType(loader.loadTexture("newFont"), new File("res/newFont.fnt"));
-        GUIText text = new GUIText("Wave:",4 , primaryFont, new Vector2f(0,0), 0.5F, false);
+        GUIText text = new GUIText("Wave:",3 , primaryFont, new Vector2f(0,0), 0.5F, false);
         GUIText textHP = new GUIText("Health: " + Player.MAX_HEALTH,3, primaryFont, new Vector2f(0F,0.1F), 0.5F, false);
 
         presets = new TerrainPresets(loader);
@@ -103,6 +103,9 @@ public class Main {
 
 
     public void run(){
+        Player.insideAGUI = true;
+        GUIS.loadPlayerInventory();
+        GUIS.guis.get(0).setPosition(new Vector2f(0,0));
         while(!DisplayManager.shouldClose()){
             //game loop and rendering
             ray.update();
@@ -119,20 +122,20 @@ public class Main {
                     }
                 }
             }
-            System.out.println(ray.getCurrentRay());
-            if(!player.isInsideAGUI()){
+            //System.out.println(ray.getCurrentRay());
+            if(!player.isInsideAGUI() && !Player.invisible){
                 for(EnemyEntity enemy : Entity.enemies){
                     enemy.pathFindertick(player, enemy);
                 }
+            }
+            for(EnemyEntity enemy : Entity.enemies){
+                enemy.tick(enemy);
             }
             List<Projectile> deleteCache = new ArrayList<>();
             for(Projectile projectile : Entity.projectiles){
                 //float yaw2 = (float) Math.atan2(ray.getCurrentRay().getX(), -ray.getCurrentRay().z);
                 Vector2f dir = projectile.getDirection();
-                float z = (float) (projectile.getPosition().getZ() + 0 * Math.cos(Math.toRadians(dir.x - 90)) - 1 * Math.cos(Math.toRadians(dir.x)));
-                float x = (float) (projectile.getPosition().getX() - 0 * Math.sin(Math.toRadians(dir.x - 90)) - 1 * Math.sin(Math.toRadians(dir.x)));
-                float y = (float) (projectile.getPosition().getY() - 0 * Math.sin(Math.toRadians(dir.y - 90)) - 1 * Math.sin(Math.toRadians(dir.y)));
-                projectile.setPosition(new Location(x, y, z));
+                projectile.setVelocity(dir);
                 //projectile.setPosition(new Location(projectile.getPosition().getX() / (float) (Math.sin(ray.getCurrentRay().x) + (index / 7F)), projectile.getPosition().getY(), projectile.getPosition().getZ() * (float)(Math.cos(ray.getCurrentRay().z) + (index / 6F))));
 
                 if(projectile.getFlyingDuration() <= 0){
@@ -167,14 +170,9 @@ public class Main {
                 }
             }
             if(Entity.enemies.size() <= 0){
-                for(GUIText text : TextMaster.texts.get(Main.primaryFont)){
-                    if(text.getText().contains("Wave:")){
-                        Player.waveTest++;
-                        text.replaceText(text, "Wave: " + Player.waveTest);
-                        Player.waveEnded = true;
-                        break;
-                    }
-                }
+                Player.waveTest++;
+                GUIText.replaceText("Wave:", "Wave: " + Player.waveTest);
+                Player.waveEnded = true;
             }
             if(Player.waveEnded){
                 System.out.println("NIFGA");

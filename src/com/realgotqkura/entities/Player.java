@@ -46,6 +46,8 @@ public class Player extends Entity{
     private static final int JUMP_POWER = 30;
 
 
+    public static boolean invisible = false;
+    public static boolean abilityOnCooldown = false;
     public static boolean insideAGUI = false;
     private int currentWalkSpeed;
     private float currentSidewaysSpeed;
@@ -66,6 +68,10 @@ public class Player extends Entity{
     private boolean escClicked = false;
     public static boolean waveEnded = false;
     public static int waveTest = 0;
+    public static String playableCharacter;
+    public static String ability;
+    public static int playerKills = 0;
+    public static int cooldownKills = 0;
 
     public Player(TexturedModel model, Location loc, float rotX, float rotY, float rotZ, float scale, Loader loader) {
         super(model, loc, rotX, rotY, rotZ, scale);
@@ -196,20 +202,32 @@ public class Player extends Entity{
         if(GLFW.glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS){
             if(!ePressed){
                 ePressed = true;
-                if(insideAGUI){
-                    insideAGUI = false;
-                    glfwSetInputMode(window, GLFW.GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-                    GUIS.closePlayerInventory();
-                    GUIS.guis.get(0).setPosition(new Vector2f(0,0));
-                    GUIS.guis.get(0).setTexture(Main.loader.loadTexture("cursor"));
-                }else{
-                    insideAGUI = true;
-                    GUIS.loadPlayerInventory();
-                    GUIS.guis.get(0).setPosition(new Vector2f(0,0));
-                    //glfwSetInputMode(window, GLFW.GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+                switch(playableCharacter){
+                    case "Nino":
+                        //Invisibility ability
+                        if(!abilityOnCooldown){
+                            invisible = true;
+                            GUIText.replaceText("Ability", "Ability (E): " + ability + " (Cooldown)");
+                            abilityOnCooldown = true;
+                        }
+                        break;
+                    case "Mitko":
+                        //Shuriken jutsu ability
+                        if(!abilityOnCooldown){
+                            for(int i = 0; i < 360; i++){
+                                if(i % 20 == 0){
+                                    Projectile projectile = new Projectile(models.shuriken(), player.getPosition(), 90,0,0, 0.5F, new Vector2f(player.getRotY(), player.getRotZ()), 60);
+                                    Main.renderer.addEntity(projectile);
+                                    projectile.setDirection(new Vector2f(i,0));
+                                }
+                            }
+                            GUIText.replaceText("Ability", "Ability (E): " + ability + " (Cooldown)");
+                            abilityOnCooldown = true;
+                        }
+                        break;
+                }
                 }
             }
-        }
 
         if(GLFW.glfwGetKey(window, GLFW_KEY_E) == GLFW_RELEASE){
             ePressed = false;
@@ -281,10 +299,31 @@ public class Player extends Entity{
                         if(MathHelper.isInside2D(cursor.getPosition(), new Vector2f(gui.getPosition().x - (gui.getScale().x), gui.getPosition().y - (gui.getScale().y)),
                                 new Vector2f(gui.getPosition().x + (gui.getScale().x), gui.getPosition().y + (gui.getScale().y)))){
                             System.out.println(gui.getName());
-                            clickedSlot = i;
+                            switch(i){
+                                case 42:
+                                    playableCharacter = "Nino";
+                                    ability = "Invisibility";
+                                    break;
+                                case 41:
+                                    playableCharacter = "Mitko";
+                                    ability = "Shuriken jutsu";
+                                    break;
+                                case 40:
+                                    playableCharacter = "Vladi";
+                                    ability = "Amaterasu";
+                                    break;
+                            }
 
                         }
                     }
+                    GUIText text = new GUIText("Character: " + playableCharacter,3, Main.primaryFont, new Vector2f(0,0.2F), 0.5F, false);
+                    GUIText AbiltyT = new GUIText("Ability (E): " + ability + " (Ready)",3, Main.primaryFont, new Vector2f(0,0.9F), 1F, false);
+                    insideAGUI = false;
+                    glfwSetInputMode(window, GLFW.GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+                    GUIS.closePlayerInventory();
+                    GUIS.guis.get(0).setPosition(new Vector2f(0,0));
+                    GUIS.guis.get(0).setTexture(Main.loader.loadTexture("cursor"));
+                    /*
                     if(clickedSlot < 69 && clickedSlot > 0){
                         try{
                             if(GUIS.playerInventoryGUIs.get(clickedSlot) != null && !hasItemInCursor){
@@ -319,6 +358,7 @@ public class Player extends Entity{
                     }catch(IndexOutOfBoundsException ignored){
 
                     }
+                     */
                 }else{
 
                     if(Main.holdedEntity == null){
@@ -351,8 +391,8 @@ public class Player extends Entity{
                         }// end of for loop
 
                      */
-                        if(Entity.projectiles.size() <= 5){
-                            Projectile projectile = new Projectile(models.craftingTable(), player.getPosition(), 0,0,0, 0.5F, new Vector2f(player.getRotY(), player.getRotZ()), 60);
+                        if(Entity.projectiles.size() <= 3){
+                            Projectile projectile = new Projectile(models.craftingTable(), new Location(player.getPosition().getX() + 0.2F, player.getPosition().getY(), player.getPosition().getZ() + 0.2F), 180,0,0, 0.5F, new Vector2f(player.getRotY(), player.getRotZ()), 60);
                             Main.renderer.addEntity(projectile);
                         }
 
