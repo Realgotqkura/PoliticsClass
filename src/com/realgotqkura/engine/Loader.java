@@ -38,6 +38,13 @@ public class Loader {
         return new RawModel(vaoID, positions.length / 2);
     }
 
+    public RawModel loadToVAO(float[] positions, int dimensions) {
+        int vaoID = createVao();
+        this.storeDataIntAttribList(0, dimensions, positions);
+        unbindVAO();
+        return new RawModel(vaoID, positions.length / dimensions);
+    }
+
     public int FontloadtoVao(float[] positions,float[] textureCoords){
         int vaoID = createVao();
         storeDataIntAttribList(0,2, positions);

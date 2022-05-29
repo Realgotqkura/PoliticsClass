@@ -53,6 +53,7 @@ public class DisplayManager {
         lastFrameTime = currentFrameTime;
     }
 
+
     public static void swapBuffers(){
         GLFW.glfwSwapBuffers(window);
     }
@@ -61,6 +62,7 @@ public class DisplayManager {
         return GLFW.glfwWindowShouldClose(window);
     }
 
+    //aka getFrameTimeSeconds or whatever
     public static float getDelta(){
         return deltaTime;
     }

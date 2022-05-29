@@ -13,6 +13,7 @@ import com.realgotqkura.guis.GuiTexture;
 import com.realgotqkura.guis.playerinventoryutils.PlInvUtils;
 import com.realgotqkura.main.Main;
 import com.realgotqkura.models.TexturedModel;
+import com.realgotqkura.particles.Particle;
 import com.realgotqkura.terrain.Terrain;
 import com.realgotqkura.utilities.*;
 import org.lwjgl.BufferUtils;
@@ -42,11 +43,11 @@ public class Player extends Entity{
     private static final int WALK_SPEED = 10;
     private static final int RUN_SPEED = 20;
     private static final float SIDEWAYS_SPEED = 20;
-    private static final int GRAVITY = -50;
+    public static final int GRAVITY = -50;
     private static final int JUMP_POWER = 30;
 
 
-    public static boolean invisible = false;
+    public static boolean abilityInUse = false;
     public static boolean abilityOnCooldown = false;
     public static boolean insideAGUI = false;
     private int currentWalkSpeed;
@@ -72,6 +73,8 @@ public class Player extends Entity{
     public static String ability;
     public static int playerKills = 0;
     public static int cooldownKills = 0;
+    public static int abilityCooldownKills = 0; //The amount of kills needed to satisfy the cooldown. Its not the same
+    //as cooldownKills. cooldownKills is just to track the amount of kills left of the cooldown;
 
     public Player(TexturedModel model, Location loc, float rotX, float rotY, float rotZ, float scale, Loader loader) {
         super(model, loc, rotX, rotY, rotZ, scale);
@@ -199,6 +202,10 @@ public class Player extends Entity{
 
     public void inputs(){ //Inputs are upside down cuz idk
         TexturedModels models = new TexturedModels(loader);
+        if(Input.keys[GLFW_KEY_Y]){
+            for(EnemyEntity enemy : Entity.enemies){
+            }
+        }
         if(GLFW.glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS){
             if(!ePressed){
                 ePressed = true;
@@ -206,7 +213,7 @@ public class Player extends Entity{
                     case "Nino":
                         //Invisibility ability
                         if(!abilityOnCooldown){
-                            invisible = true;
+                            abilityInUse = true;
                             GUIText.replaceText("Ability", "Ability (E): " + ability + " (Cooldown)");
                             abilityOnCooldown = true;
                         }
@@ -216,13 +223,22 @@ public class Player extends Entity{
                         if(!abilityOnCooldown){
                             for(int i = 0; i < 360; i++){
                                 if(i % 20 == 0){
-                                    Projectile projectile = new Projectile(models.shuriken(), player.getPosition(), 90,0,0, 0.5F, new Vector2f(player.getRotY(), player.getRotZ()), 60);
+                                    Projectile projectile = new Projectile(models.shuriken(), player.getPosition(), 90,0,0, 0.5F, new Vector2f(player.getRotY(), player.getRotZ()), 60, ParticleType.SHURIKEN);
                                     Main.renderer.addEntity(projectile);
                                     projectile.setDirection(new Vector2f(i,0));
                                 }
                             }
                             GUIText.replaceText("Ability", "Ability (E): " + ability + " (Cooldown)");
                             abilityOnCooldown = true;
+                        }
+                        break;
+                    case "Vladi":
+                        //Shuriken jutsu ability
+                        if(!abilityOnCooldown){
+                            abilityInUse = true;
+                            Projectile projectile = new Projectile(models.shuriken(), player.getPosition(), 90,0,0, 0.5F, new Vector2f(player.getRotY(), player.getRotZ()), 60, ParticleType.AMATERASU);
+                            Main.renderer.addEntity(projectile);
+                            projectile.setDirection(projectile.getDirection());
                         }
                         break;
                 }
@@ -303,14 +319,17 @@ public class Player extends Entity{
                                 case 42:
                                     playableCharacter = "Nino";
                                     ability = "Invisibility";
+                                    abilityCooldownKills = 5;
                                     break;
                                 case 41:
                                     playableCharacter = "Mitko";
                                     ability = "Shuriken jutsu";
+                                    abilityCooldownKills = 5;
                                     break;
                                 case 40:
                                     playableCharacter = "Vladi";
                                     ability = "Amaterasu";
+                                    abilityCooldownKills = 7;
                                     break;
                             }
 
@@ -392,7 +411,7 @@ public class Player extends Entity{
 
                      */
                         if(Entity.projectiles.size() <= 3){
-                            Projectile projectile = new Projectile(models.craftingTable(), new Location(player.getPosition().getX() + 0.2F, player.getPosition().getY(), player.getPosition().getZ() + 0.2F), 180,0,0, 0.5F, new Vector2f(player.getRotY(), player.getRotZ()), 60);
+                            Projectile projectile = new Projectile(models.craftingTable(), new Location(player.getPosition().getX() + 0.2F, player.getPosition().getY(), player.getPosition().getZ() + 0.2F), 180,0,0, 0.5F, new Vector2f(player.getRotY(), player.getRotZ()), 60, ParticleType.DEFAULT);
                             Main.renderer.addEntity(projectile);
                         }
 

@@ -12,6 +12,7 @@ import com.realgotqkura.guis.GUIS;
 import com.realgotqkura.guis.GuiTexture;
 import com.realgotqkura.models.RawModel;
 import com.realgotqkura.models.TexturedModel;
+import com.realgotqkura.particles.ParticleMaster;
 import com.realgotqkura.terrain.Terrain;
 import com.realgotqkura.textures.ModelTexture;
 import com.realgotqkura.utilities.*;
@@ -60,6 +61,7 @@ public class Main {
         primaryFont = new FontType(loader.loadTexture("newFont"), new File("res/newFont.fnt"));
         GUIText text = new GUIText("Wave:",3 , primaryFont, new Vector2f(0,0), 0.5F, false);
         GUIText textHP = new GUIText("Health: " + Player.MAX_HEALTH,3, primaryFont, new Vector2f(0F,0.1F), 0.5F, false);
+        ParticleMaster.init(loader, renderer.getProjectionMatrix());
 
         presets = new TerrainPresets(loader);
         guiRenderer = new GUIRenderer(loader);
@@ -109,6 +111,7 @@ public class Main {
         while(!DisplayManager.shouldClose()){
             //game loop and rendering
             ray.update();
+            ParticleMaster.update();
             for(Terrain terrain : terrains){
                 if(terrain.getX() <= player.getPosition().getX()) {
                     if(terrain.getX() + Terrain.SIZE > player.getPosition().getX()) {
@@ -123,7 +126,7 @@ public class Main {
                 }
             }
             //System.out.println(ray.getCurrentRay());
-            if(!player.isInsideAGUI() && !Player.invisible){
+            if(!player.isInsideAGUI() && !(Player.abilityInUse && Player.playableCharacter.contains("Nino"))){
                 for(EnemyEntity enemy : Entity.enemies){
                     enemy.pathFindertick(player, enemy);
                 }
@@ -161,6 +164,7 @@ public class Main {
                 }
             }
             renderer.render(light, camera);
+            ParticleMaster.render(camera);
             guiRenderer.render();
             //System.out.println(player.getRotation().toString());
             if(holdedEntity != null){
@@ -185,6 +189,7 @@ public class Main {
                 Player.waveEnded = false;
             }
 
+
             GUIS.clickPlayerInventory();
             //light.setPosition(camera.getPosition());
             //System.out.println(MathHelper.distanceBetweenObjects(new Location(1,5,1), camera.getPosition()));
@@ -192,6 +197,7 @@ public class Main {
             TextMaster.render();
             DisplayManager.updateDisplay();
         }
+        ParticleMaster.cleanUp();
         TextMaster.cleanUp();
         guiRenderer.cleanUp();
         renderer.cleanUp();
