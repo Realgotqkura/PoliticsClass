@@ -15,19 +15,26 @@ public class TexturedModels {
         this.loader = loader;
     }
 
+    public TexturedModel bomb(){
+        ModelTexture table = new ModelTexture(loader.loadTexture("BombYes"));
+        //table.setTransparency(true);
+        //table.setFakeLight(true);
+        ModelData data = OBJLoader.loadOBJModel("Bomb");
+        return new TexturedModel(loader.loadtoVao(data.getVertices(),data.getTextureCoords(),data.getNormals(),data.getIndices()), table, "bomb");
+    }
 
     public TexturedModel shuriken(){
         ModelTexture table = new ModelTexture(loader.loadTexture("metal"));
         table.setTransparency(true);
         table.setFakeLight(true);
         ModelData data = OBJLoader.loadOBJModel("shuriken");
-        return new TexturedModel(loader.loadtoVao(data.getVertices(),data.getTextureCoords(),data.getNormals(),data.getIndices()), table, "CraftingTable");
+        return new TexturedModel(loader.loadtoVao(data.getVertices(),data.getTextureCoords(),data.getNormals(),data.getIndices()), table, "shuriken");
     }
 
     public TexturedModel craftingTable(){
         ModelTexture table = new ModelTexture(loader.loadTexture("CraftingTableTex"));
-        //table.setTransparency(true);
-        //table.setFakeLight(true);
+        table.setTransparency(true);
+        table.setFakeLight(true);
         ModelData data = OBJLoader.loadOBJModel("CraftingTable");
         return new TexturedModel(loader.loadtoVao(data.getVertices(),data.getTextureCoords(),data.getNormals(),data.getIndices()), table, "CraftingTable");
     }

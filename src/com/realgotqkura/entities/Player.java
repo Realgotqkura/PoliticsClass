@@ -1,36 +1,23 @@
 package com.realgotqkura.entities;
 
+import com.realgotqkura.data.SaveableData;
 import com.realgotqkura.engine.DisplayManager;
 import com.realgotqkura.engine.Loader;
-import com.realgotqkura.engine.MasterRenderer;
+import com.realgotqkura.engine.RayCast;
 import com.realgotqkura.engine.testing.TexturedModels;
-import com.realgotqkura.engine.testing.VertexListsOfShapes;
 import com.realgotqkura.fontMeshCreator.GUIText;
-import com.realgotqkura.fontRendering.TextMaster;
-import com.realgotqkura.guis.GUIRenderer;
 import com.realgotqkura.guis.GUIS;
 import com.realgotqkura.guis.GuiTexture;
-import com.realgotqkura.guis.playerinventoryutils.PlInvUtils;
 import com.realgotqkura.main.Main;
 import com.realgotqkura.models.TexturedModel;
-import com.realgotqkura.particles.Particle;
 import com.realgotqkura.terrain.Terrain;
 import com.realgotqkura.utilities.*;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.glfw.GLFW;
-import org.lwjgl.opengl.GL11;
-import org.lwjglx.input.Mouse;
-import org.lwjglx.opengl.Display;
 import org.lwjglx.util.vector.Vector2f;
-import org.lwjglx.util.vector.Vector3f;
-import org.w3c.dom.Text;
 
-import java.io.FileNotFoundException;
 import java.nio.DoubleBuffer;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
 import static org.lwjgl.glfw.GLFW.*;
@@ -38,18 +25,25 @@ import static org.lwjgl.glfw.GLFW.*;
 public class Player extends Entity{
 
     public static Player player;
-    public static final int MAX_HEALTH = 50;
+    public static int MAX_HEALTH = 50;
     public static int health = 50;
-    private static final int WALK_SPEED = 10;
+    public static int WALK_SPEED = 10;
     private static final int RUN_SPEED = 20;
     private static final float SIDEWAYS_SPEED = 20;
     public static final int GRAVITY = -50;
     private static final int JUMP_POWER = 30;
+    public static float playerDamageStat = 1;
+    public static int playerAbilityDamageStat = 1;
+    public static float playerCoinGainStat = 1;
+    public static int playerCooldownStat = 0; //This stat shows by how much the cooldown of the ability will get lowered by
 
 
+    public static int magiAbilityTicks = 0;
+    public static float playerCoins = 0;
     public static boolean abilityInUse = false;
     public static boolean abilityOnCooldown = false;
     public static boolean insideAGUI = false;
+    private TexturedModels models;
     private int currentWalkSpeed;
     private float currentSidewaysSpeed;
     private float stackedAccelerationSpeed;
@@ -73,6 +67,8 @@ public class Player extends Entity{
     public static String ability;
     public static int playerKills = 0;
     public static int cooldownKills = 0;
+    public static boolean cooldownOnWave = false;
+    public static int waveStartedAt; //Za Ceco abilityto bahti deformiraniq
     public static int abilityCooldownKills = 0; //The amount of kills needed to satisfy the cooldown. Its not the same
     //as cooldownKills. cooldownKills is just to track the amount of kills left of the cooldown;
 
@@ -80,6 +76,7 @@ public class Player extends Entity{
         super(model, loc, rotX, rotY, rotZ, scale);
         this.loader = loader;
         player = this;
+        models = new TexturedModels(loader);
     }
 
     public List<Double> mouse(){
@@ -199,15 +196,26 @@ public class Player extends Entity{
         }
     }
 
+    private boolean rPressed = false;
 
     public void inputs(){ //Inputs are upside down cuz idk
-        TexturedModels models = new TexturedModels(loader);
-        if(Input.keys[GLFW_KEY_Y]){
-            for(EnemyEntity enemy : Entity.enemies){
+
+        if(GLFW.glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS){
+            if(!rPressed){
+                rPressed = true;
+                if(!GUIS.inShopInv){
+                    GUIS.loadShopGUI();
+                    insideAGUI = true;
+                    GUIS.guis.get(0).setPosition(new Vector2f(0,0));
+                }else{
+                    GUIS.closeShop();
+                    insideAGUI = false;
+                    GUIS.guis.get(0).setPosition(new Vector2f(0,0));
+                }
             }
         }
         if(GLFW.glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS){
-            if(!ePressed){
+            if(!ePressed && !insideAGUI){
                 ePressed = true;
                 switch(playableCharacter){
                     case "Nino":
@@ -223,7 +231,7 @@ public class Player extends Entity{
                         if(!abilityOnCooldown){
                             for(int i = 0; i < 360; i++){
                                 if(i % 20 == 0){
-                                    Projectile projectile = new Projectile(models.shuriken(), player.getPosition(), 90,0,0, 0.5F, new Vector2f(player.getRotY(), player.getRotZ()), 60, ParticleType.SHURIKEN);
+                                    Projectile projectile = new Projectile(models.shuriken(), player.getPosition(), 90,0,0, 0.5F, new Vector2f(player.getRotY(), player.getRotZ()), 60, ProjectileType.SHURIKEN);
                                     Main.renderer.addEntity(projectile);
                                     projectile.setDirection(new Vector2f(i,0));
                                 }
@@ -236,17 +244,87 @@ public class Player extends Entity{
                         //Shuriken jutsu ability
                         if(!abilityOnCooldown){
                             abilityInUse = true;
-                            Projectile projectile = new Projectile(models.shuriken(), player.getPosition(), 90,0,0, 0.5F, new Vector2f(player.getRotY(), player.getRotZ()), 60, ParticleType.AMATERASU);
+                            Projectile projectile = new Projectile(models.shuriken(), player.getPosition(), 90,0,0, 0.5F, new Vector2f(player.getRotY(), player.getRotZ()), 60, ProjectileType.AMATERASU);
                             Main.renderer.addEntity(projectile);
                             projectile.setDirection(projectile.getDirection());
+                            GUIText.replaceText("Ability", "Ability (E): " + ability + " (In Use)");
                         }
                         break;
+                    case "Gosho":
+                        //Shuriken jutsu ability
+                        if(!abilityOnCooldown){
+                            Projectile projectile = new Projectile(models.bomb(), player.getPosition(), 0,0,0, 1F, new Vector2f(player.getRotY(), player.getRotZ()), 60, ProjectileType.BOMB);
+                            Main.renderer.addEntity(projectile);
+                            projectile.setDirection(projectile.getDirection());
+                            GUIText.replaceText("Ability", "Ability (E): " + ability + " (In Use)");
+                            abilityOnCooldown = true;
+                        }
+                        break;
+                    case "Lora":
+                    case "Magi":
+                        if(!abilityOnCooldown || !abilityInUse){
+                            abilityInUse = true;
+                            GUIText.replaceText("Ability", "Ability (E): " + ability + " (In Use)");
+                        }
+                        break;
+                    case "Emo":
+                        if(!abilityOnCooldown){
+                            abilityOnCooldown = true;
+                            this.setPosition(new Location(this.getPosition().getX() + 75 * (float) Math.sin(Math.toRadians(this.getRotY()) - 90),
+                                    this.getPosition().getY(),this.getPosition().getZ() + 75 * (float) Math.cos(Math.toRadians(this.getRotY()) - 90)));
+                            GUIText.replaceText("Ability", "Ability (E): " + ability + " (Cooldown " + abilityCooldownKills + " kills left)");
+                        }
+                        break;
+                    case "Vasko":
+                        if(!abilityOnCooldown){
+                            abilityOnCooldown = true;
+                            for(EnemyEntity enemy : Entity.enemies){
+                                enemy.hurtEnemy(1 + (2 * Player.playerAbilityDamageStat)); //Hardcoded 1 for now lol
+                            }
+                            GUIText.replaceText("Ability", "Ability (E): " + ability + " (Cooldown " + abilityCooldownKills + " kills left)");
+                        }
+                        break;
+                    case "Ceco":
+                        if(!abilityOnCooldown || !abilityInUse){
+                            abilityInUse = true;
+                            waveStartedAt = waveTest;
+                            GUIText.replaceText("Ability", "Ability (E): " + ability + " (In Use)");
+                        }
+                        break;
+                    case "Nad.T":
+                        if(!abilityOnCooldown){
+                            Timer t = new Timer();
+                            long period = 1*1000; //For example 1 second
+                            long delay = 1*1000; //For example 1 second
+                            t.schedule(new TimerTask() {
+                                int index = 0;
+                                @Override
+                                public void run() {
+                                    if(index < 10){
+                                        for(EnemyEntity entity : Entity.enemies){
+                                            EnemyEntity.Speed = 0.11F / 2;
+                                            entity.hurtEnemy(0.2F);
+                                        }
+                                    }else{
+                                        EnemyEntity.Speed *= 2;
+                                        t.cancel();
+                                    }
+                                    index++;
+                                }
+                            }, delay, period);
+                            abilityOnCooldown = true;
+                            GUIText.replaceText("Ability", "Ability (E): " + ability + " (Cooldown " + abilityCooldownKills + " kills left)");
+                        }
+
                 }
                 }
             }
 
         if(GLFW.glfwGetKey(window, GLFW_KEY_E) == GLFW_RELEASE){
             ePressed = false;
+        }
+        if(GLFW.glfwGetKey(window, GLFW_KEY_R) == GLFW_RELEASE){
+            rPressed = false;
         }
         if(Input.keys[GLFW_KEY_W] && Input.keys[GLFW_KEY_LEFT_CONTROL]){
             this.currentWalkSpeed = -RUN_SPEED;
@@ -307,7 +385,8 @@ public class Player extends Entity{
 
         if(GLFW.glfwGetMouseButton(window, 0) == GLFW_PRESS && !mousePressed){
             mousePressed = true;
-                if(isInsideAGUI()){
+                if(isInsideAGUI() && GUIS.inCharacterInv){
+                    GUIText.replaceText(":Gold", Math.round(Math.floor(playerCoins)) + " :Coins");
                     GuiTexture cursor = GUIS.guis.get(0);
                     for(int i = 0; i < GUIS.playerInventoryGUIs.size(); i++){
                         GuiTexture gui = GUIS.playerInventoryGUIs.get(i);
@@ -331,12 +410,56 @@ public class Player extends Entity{
                                     ability = "Amaterasu";
                                     abilityCooldownKills = 7;
                                     break;
+                                case 39:
+                                    playableCharacter = "Gosho";
+                                    ability = "Flaming Airstrike";
+                                    abilityCooldownKills = 5;
+                                    break;
+                                case 38:
+                                    playableCharacter = "Lora";
+                                    ability = "20/20 Vision";
+                                    abilityCooldownKills = 4;
+                                    break;
+                                case 37:
+                                    playableCharacter = "Emo";
+                                    ability = "Flashy Raijin";
+                                    abilityCooldownKills = 3; //Gonna be upgradeable to 1 or 0 idk yet
+                                    break;
+                                case 36:
+                                    playableCharacter = "Vasko";
+                                    ability = "Earthquake"; //Mnogo milo
+                                    abilityCooldownKills = 4; //Early game trash but when shop is introduced it will be juicy
+                                    break;
+                                case 35:
+                                    playableCharacter = "Ceco";
+                                    ability = "Deformed Brain";
+                                    cooldownOnWave = true;
+                                    GUIText statIncreaseTxt = new GUIText("Last stat UP:", 3, Main.primaryFont, new Vector2f(0,0.8F), 0.7F, false);
+                                    break;
+                                case 34:
+                                    playableCharacter = "Lubumira";
+                                    ability = "KAMUI";
+                                    abilityCooldownKills = 0;
+                                    break;
+                                case 33:
+                                    playableCharacter = "Magi";
+                                    ability = "Negative Attraction";
+                                    abilityCooldownKills = 3;
+                                    break;
+                                case 32:
+                                    playableCharacter = "Nad.T";
+                                    ability = "Rose Thorns";
+                                    abilityCooldownKills = 6;
+                                    break;
                             }
 
                         }
                     }
                     GUIText text = new GUIText("Character: " + playableCharacter,3, Main.primaryFont, new Vector2f(0,0.2F), 0.5F, false);
                     GUIText AbiltyT = new GUIText("Ability (E): " + ability + " (Ready)",3, Main.primaryFont, new Vector2f(0,0.9F), 1F, false);
+                    if(playableCharacter.equalsIgnoreCase("ceco")){
+                        GUIText.replaceText("Ability (E):", "Ability (E): " + ability + " (Always Active)");
+                    }
                     insideAGUI = false;
                     glfwSetInputMode(window, GLFW.GLFW_CURSOR, GLFW_CURSOR_DISABLED);
                     GUIS.closePlayerInventory();
@@ -378,9 +501,53 @@ public class Player extends Entity{
 
                     }
                      */
+                }else if(insideAGUI && GUIS.inShopInv){
+                    GuiTexture cursor = GUIS.guis.get(0);
+                    for(int i = 0; i < GUIS.shopGUI.size(); i++) {
+                        GuiTexture gui = GUIS.shopGUI.get(i);
+                        //System.out.println(cursor.getPosition().toString());(gui.getScale() / 2)
+                        if (MathHelper.isInside2D(cursor.getPosition(), new Vector2f(gui.getPosition().x - (gui.getScale().x), gui.getPosition().y - (gui.getScale().y)),
+                                new Vector2f(gui.getPosition().x + (gui.getScale().x), gui.getPosition().y + (gui.getScale().y)))) {
+                            System.out.println(gui.getName());
+                            switch(gui.getName()){
+                                case "Upgrade_One":
+                                    if(playerCoins >= 100 * ShopVariables.UPGRADE_DAMAGE_LVL){
+                                        playerDamageStat++;
+                                        playerCoins -= 100 * ShopVariables.UPGRADE_DAMAGE_LVL;
+                                        ShopVariables.UPGRADE_DAMAGE_LVL++;
+                                        GUIText.replaceText(":Coins", Math.round(Math.floor(playerCoins)) + " :Coins");
+                                        GUIText.replaceText("Proj.", "Proj. Damage +1: " + (100 * ShopVariables.UPGRADE_DAMAGE_LVL));
+                                    }
+                                    break;
+                                case "Upgrade_Two":
+                                    if(playerCoins >= 150 * ShopVariables.UPGRADE_COIN_LVL){
+                                        playerCoinGainStat++;
+                                        playerCoins -= 150 * ShopVariables.UPGRADE_COIN_LVL;
+                                        ShopVariables.UPGRADE_COIN_LVL++;
+                                        GUIText.replaceText(":Coins", Math.round(Math.floor(playerCoins)) + " :Coins");
+                                        GUIText.replaceText("Coin per", "Coin per kill +1: " + (150 * ShopVariables.UPGRADE_COIN_LVL));
+                                    }
+                                    break;
+                                case "Ability_Upgrade":
+                                    if(playerCoins >= 200 * ShopVariables.ABILITY_UPGRADE_LVL && ShopVariables.ABILITY_UPGRADE_LVL <= 4){
+                                        playerCooldownStat++;
+                                        playerAbilityDamageStat++;
+                                        playerCoins -= 200 * ShopVariables.ABILITY_UPGRADE_LVL;
+                                        ShopVariables.ABILITY_UPGRADE_LVL++;
+                                        GUIText.replaceText(":Coins", Math.round(Math.floor(playerCoins)) + " :Coins");
+                                        GUIText.replaceText("Ability upgrade:", "Ability upgrade: " + (200 * ShopVariables.ABILITY_UPGRADE_LVL));
+                                    }
+                                    break;
+                            }
+                        }
+                    }
                 }else{
-
-                    if(Main.holdedEntity == null){
+                    if(Entity.projectiles.size() <= 3){
+                        Main.renderer.addEntity(new Projectile(models.craftingTable(), new Location(player.getPosition().getX() + 0.2F, player.getPosition().getY(), player.getPosition().getZ() + 0.2F), 180,0,0, 0.5F, new Vector2f(player.getRotY(), player.getRotZ()), 60, ProjectileType.DEFAULT));
+                        if(Player.abilityInUse && playableCharacter.contains("Lora")){
+                            Main.renderer.addEntity(new Projectile(models.craftingTable(), new Location(player.getPosition().getX() + 0.2F, player.getPosition().getY() + 1, player.getPosition().getZ() + 0.2F), 180,0,0, 0.5F, new Vector2f(player.getRotY(), player.getRotZ()), 60, ProjectileType.DEFAULT));
+                        }
+                    }
                         /*
                         for(Entity entity : Entity.entities){
                             if(MathHelper.isInside(Location.Vec3toLocation(Main.ray.getCurrentTerrainPoint()),
@@ -410,11 +577,6 @@ public class Player extends Entity{
                         }// end of for loop
 
                      */
-                        if(Entity.projectiles.size() <= 3){
-                            Projectile projectile = new Projectile(models.craftingTable(), new Location(player.getPosition().getX() + 0.2F, player.getPosition().getY(), player.getPosition().getZ() + 0.2F), 180,0,0, 0.5F, new Vector2f(player.getRotY(), player.getRotZ()), 60, ParticleType.DEFAULT);
-                            Main.renderer.addEntity(projectile);
-                        }
-
 
                         if(waveEnded){
                             System.out.println("NIFGA");
@@ -426,10 +588,8 @@ public class Player extends Entity{
                             }
                             waveEnded = false;
                         }
-                    }else {
-                        Main.holdedEntity = null;
                     }
-                }
+
         }
 
 
@@ -475,6 +635,11 @@ public class Player extends Entity{
 
     public static boolean isCursorEmpty(){
         return hasItemInCursor;
+    }
+
+    public static void addCoin(float coin){
+        playerCoins += coin;
+        GUIText.replaceText(":Coin", Math.round(Math.floor(playerCoins)) + " :Coins");
     }
 
     //Just changes the variable, doesn't actually add an item

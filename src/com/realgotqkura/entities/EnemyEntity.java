@@ -18,11 +18,12 @@ import java.util.concurrent.ThreadLocalRandom;
 public class EnemyEntity extends Entity{
 
 
+    public static float Speed = 0.11F;
     private TexturedModel model;
     private Location loc;
     private float rX, rY, rZ;
     private float scale;
-    private int health;
+    private float health;
     private Projectile collidedProjectile;
 
     public EnemyEntity(TexturedModel model, Location loc, float rotX, float rotY, float rotZ, float scale, int health) {
@@ -113,41 +114,68 @@ public class EnemyEntity extends Entity{
                 int randomY = ThreadLocalRandom.current().nextInt(-100,100 + 1);
                 new Particle(enemy.getPosition().toVector3f(), new Vector3f(randomX,randomY,randomZ), 1,5,1,0);
             }
-            this.health -= collidedProjectile.getProjectileDamage();
+            hurtEnemy(collidedProjectile.getProjectileDamage());
+            if(collidedProjectile.getProjectileType() == ProjectileType.BOMB){
+                for(EnemyEntity enemyEntity : Entity.enemies){
+                    if(MathHelper.isInside(enemyEntity.getPosition(),
+                            new Location(collidedProjectile.getPosition().getX() - 25, collidedProjectile.getPosition().getY() + (collidedProjectile.getScale() * 5), collidedProjectile.getPosition().getZ()  - 25),
+                            new Location(enemy.getPosition().getX() + 25, collidedProjectile.getPosition().getY() - (collidedProjectile.getScale() * 5), collidedProjectile.getPosition().getZ() + 25))){
+                        Entity.deleteEntityCache.add(enemyEntity);
+                    }
+                }
+            }
             if(this.health <= 0){
+                if(Player.playableCharacter.equalsIgnoreCase("ceco")){
+                    cecoAbility();
+                }
+                int cooldown = Player.abilityCooldownKills - Player.playerCooldownStat;
+                Player.addCoin(Player.playerCoinGainStat + 1);
+                GUIText.replaceText(":Coins", Math.round(Math.floor(Player.playerCoins)) + " :Coins");
+                for(int i = 0; i < 10; i++){
+                    int randomX = ThreadLocalRandom.current().nextInt(-50,  50 + 1);
+                    int randomZ = ThreadLocalRandom.current().nextInt(-50, 50 + 1);
+                    int randomY = ThreadLocalRandom.current().nextInt(-50,50 + 1);
+                    new Particle(enemy.getPosition().toVector3f(), new Vector3f(randomX,randomY,randomZ), 1,5,3F,0);
+                }
                 Entity.deleteEntityCache.add(enemy);
                 if(Player.abilityInUse){
                     Player.playerKills++;
                 }
                 if(Player.abilityOnCooldown && !Player.abilityInUse){
                     Player.cooldownKills++;
-                    GUIText.replaceText("Ability", "Ability (E): " + Player.ability + " (Cooldown " + (Player.abilityCooldownKills - Player.cooldownKills) + " kills left)");
+                    GUIText.replaceText("Ability", "Ability (E): " + Player.ability + " (Cooldown " + (cooldown - Player.cooldownKills) + " kills left)");
                 }
                 switch(Player.playableCharacter){
                     case "Nino":
                         if(Player.playerKills >= 2){
                             Player.abilityInUse = false;
                             Player.playerKills = 0;
-                        }else if(Player.cooldownKills >= Player.abilityCooldownKills){
+                        }else if(Player.cooldownKills >= cooldown){
                             Player.cooldownKills = 0;
                             GUIText.replaceText("Ability", "Ability (E): " + Player.ability + " (Ready)");
                             Player.abilityOnCooldown = false;
                         }
                         break;
+                    case "Vasko":
+                    case "Emo":
                     case "Mitko":
-                         if(Player.cooldownKills >= Player.abilityCooldownKills){
+                    case "Gosho":
+                    case "Magi":
+                    case "Nad.T":
+                        if(Player.cooldownKills >= cooldown){
                             Player.cooldownKills = 0;
                             GUIText.replaceText("Ability", "Ability (E): " + Player.ability + " (Ready)");
                             Player.abilityOnCooldown = false;
                         }
                         break;
+                    case "Lora":
                     case "Vladi":
                         if(Player.playerKills >= 3){
                             Player.abilityInUse = false;
                             Player.playerKills = 0;
-                            GUIText.replaceText("Ability", "Ability (E): " + Player.ability + " (Cooldown)");
+                            GUIText.replaceText("Ability", "Ability (E): " + Player.ability + " (Cooldown " + Player.abilityCooldownKills + " kills left)");
                             Player.abilityOnCooldown = true;
-                        }else if(Player.cooldownKills >= Player.abilityCooldownKills){
+                        }else if(Player.cooldownKills >= cooldown){
                             Player.cooldownKills = 0;
                             GUIText.replaceText("Ability", "Ability (E): " + Player.ability + " (Ready)");
                             Player.abilityOnCooldown = false;
@@ -169,8 +197,52 @@ public class EnemyEntity extends Entity{
         }
     }
 
-    public void pathFindertick(Entity target, Entity enemy){
-        float deltaX = 0.11F, deltaZ = 0.11F;
+    private void cecoAbility(){
+        int randomS = ThreadLocalRandom.current().nextInt(0, 3 + 1);
+        int randomN = ThreadLocalRandom.current().nextInt(0,1 + 1);
+        switch(randomS){
+            case 0:
+                if(randomN == 0){
+                    Player.health++;
+                    GUIText.replaceText("Last stat", "Last stat UP: +1HP");
+                }else{
+                    Player.health--;
+                    GUIText.replaceText("Last stat", "Last stat UP: -1HP");
+                }
+                GUIText.replaceText("Health:", "Health: " + Player.health);
+                break;
+            case 1:
+                if(randomN == 0){
+                    Player.WALK_SPEED += 0.5F;
+                    GUIText.replaceText("Last stat", "Last stat UP: +0.5 Speed");
+                }else{
+                    Player.WALK_SPEED -= 0.3F;
+                    GUIText.replaceText("Last stat", "Last stat UP: -0.3 Speed");
+                }
+                break;
+            case 2:
+                if(randomN == 0){
+                    Player.playerDamageStat += 0.3F;
+                    GUIText.replaceText("Last stat", "Last stat UP: +0.3 Dmg");
+                }else{
+                    Player.playerDamageStat -= 0.2F;
+                    GUIText.replaceText("Last stat", "Last stat UP: -0.2 Dmg");
+                }
+                break;
+            case 3:
+                if(randomN == 0){
+                    Player.playerCoinGainStat += 0.3F;
+                    GUIText.replaceText("Last stat", "Last stat UP: +0.3 Coins per Kill");
+                }else{
+                    Player.playerCoinGainStat -= 0.2F;
+                    GUIText.replaceText("Last stat", "Last stat UP: -0.2 Coins per Kill");
+                }
+                break;
+        }
+    }
+
+    public void pathFindertick(Entity target, Entity enemy, boolean reversed, float speed){
+        float deltaX = speed, deltaZ = speed;
         Location enemyLoc = enemy.getPosition();
         Location targetLoc = target.getPosition();
         float x = enemyLoc.getX(),z = enemyLoc.getZ();
@@ -183,26 +255,35 @@ public class EnemyEntity extends Entity{
         if(MathHelper.distanceBetweenObjects(enemyLoc, targetLoc) < 0.2){
             return;
         }
-
-       else if(!collisionCheck(enemy)){
-           x = enemyLoc.getX() + deltaX;
-           z = enemyLoc.getZ() + deltaZ;
-           enemyLoc.setY(findTerrainY(enemy));
-           enemyLoc.setX(x);
-           enemyLoc.setZ(z);
-       }else{
-           enemyLoc.setY(findTerrainY(enemy));
-           enemyLoc.setX(x);
-           enemyLoc.setZ(z);
-       }
-       //Rotation
+        //Rotation
         Vector3f difference = Location.subtract(targetLoc, enemyLoc);
         float degrees = (float) Math.toDegrees(Math.atan2(difference.getZ(), difference.getX()) - Math.PI / 2);
-        enemy.setRotY(degrees);
+           if(!reversed){
+               x = enemyLoc.getX() + deltaX;
+               z = enemyLoc.getZ() + deltaZ;
+               enemy.setRotY(degrees);
+           }else{
+               x = enemyLoc.getX() - deltaX;
+               z = enemyLoc.getZ() - deltaZ;
+               enemy.setRotY(degrees - 90);
+           }
+           enemyLoc.setY(findTerrainY(enemy));
+           enemyLoc.setX(x);
+           enemyLoc.setZ(z);
         //Prepare for another run
         deltaX = 0.11F;
         deltaZ = 0.11F;
 
+    }
+
+    public void hurtEnemy(float damage){
+        this.health -= damage;
+        for(int i = 0; i < 10; i++){
+            int randomX = ThreadLocalRandom.current().nextInt(-50,  50 + 1);
+            int randomZ = ThreadLocalRandom.current().nextInt(-50, 50 + 1);
+            int randomY = ThreadLocalRandom.current().nextInt(-50,50 + 1);
+            new Particle(this.getPosition().toVector3f(), new Vector3f(randomX,randomY,randomZ), 1,5,3F,0);
+        }
     }
 
 

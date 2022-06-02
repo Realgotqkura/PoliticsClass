@@ -140,6 +140,16 @@ public class GUIText {
 		this.textMeshVao = vao;
 		this.vertexCount = verticesCount;
 	}
+	//Param contains: The text u wanna replace add the string that it contains
+	public static void removeText(String contains){
+		for(GUIText text : TextMaster.texts.get(Main.primaryFont)){
+			if(text.getText().contains(contains)){
+				TextMaster.removeText(text);
+				break;
+			}
+		}
+	}
+
 
 	//Param contains: The text u wanna replace add the string that it contains
 	public static void replaceText(String contains, String newText){

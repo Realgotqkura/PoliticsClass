@@ -1,5 +1,7 @@
 package com.realgotqkura.main;
 
+import com.realgotqkura.data.DataMethods;
+import com.realgotqkura.data.SaveableData;
 import com.realgotqkura.engine.*;
 import com.realgotqkura.engine.testing.TerrainPresets;
 import com.realgotqkura.engine.testing.TexturedModels;
@@ -12,6 +14,7 @@ import com.realgotqkura.guis.GUIS;
 import com.realgotqkura.guis.GuiTexture;
 import com.realgotqkura.models.RawModel;
 import com.realgotqkura.models.TexturedModel;
+import com.realgotqkura.particles.Particle;
 import com.realgotqkura.particles.ParticleMaster;
 import com.realgotqkura.terrain.Terrain;
 import com.realgotqkura.textures.ModelTexture;
@@ -48,11 +51,13 @@ public class Main {
     public static Entity holdedEntity;
     private TexturedModels models;
     public static FontType primaryFont;
-
-
+    public static Terrain currentTerrain; //The current terrain that the player is standing on
 
 
     public Main(){
+        DataMethods.createFile();
+        DataMethods.SaveUponExit();
+        DataMethods.load();
         DisplayManager.createDisplay();
         loader = new Loader();
         renderer = new MasterRenderer();
@@ -61,6 +66,8 @@ public class Main {
         primaryFont = new FontType(loader.loadTexture("newFont"), new File("res/newFont.fnt"));
         GUIText text = new GUIText("Wave:",3 , primaryFont, new Vector2f(0,0), 0.5F, false);
         GUIText textHP = new GUIText("Health: " + Player.MAX_HEALTH,3, primaryFont, new Vector2f(0F,0.1F), 0.5F, false);
+        GUIText goldTxt = new GUIText(SaveableData.GOLD + " :Gold",3, primaryFont, new Vector2f(0F,0.3F), 0.5F, false);
+        GUIText Shop = new GUIText("Shop: R",3, primaryFont, new Vector2f(0.82F,0.0F), 0.5F, false);
         ParticleMaster.init(loader, renderer.getProjectionMatrix());
 
         presets = new TerrainPresets(loader);
@@ -79,7 +86,6 @@ public class Main {
         }
         //Tsukuyomi: light.setColor(new Vector3f(0.7F,0.7F,0.7F));
         light.setColor(new Vector3f(0.7F, 0.78F, 0.7F));
-
         ray = new RayCast(camera, renderer.getProjectionMatrix(), terrains);
         ModelData data = OBJLoader.loadOBJModel("ball");
         RawModel playerModel = loader.loadtoVao(data.getVertices(), data.getTextureCoords(), data.getNormals(), data.getIndices());
@@ -96,9 +102,6 @@ public class Main {
         //holdedEntity = craftingTable;
         GUIS.initGUIs();
         System.out.println(Entity.enemies);
-
-
-
         GLFW.glfwSetKeyCallback(DisplayManager.window,keyCallback = new Input());
         run();
     }
@@ -107,6 +110,7 @@ public class Main {
     public void run(){
         Player.insideAGUI = true;
         GUIS.loadPlayerInventory();
+        //GUIS.loadShopGUI();
         GUIS.guis.get(0).setPosition(new Vector2f(0,0));
         while(!DisplayManager.shouldClose()){
             //game loop and rendering
@@ -117,6 +121,7 @@ public class Main {
                     if(terrain.getX() + Terrain.SIZE > player.getPosition().getX()) {
                         if(terrain.getZ() <= player.getPosition().getZ()) {
                             if(terrain.getZ() + Terrain.SIZE > player.getPosition().getZ()) {
+                                currentTerrain = terrain;
                                 player.move(terrain);
                                 camera.move(player);
 
@@ -128,8 +133,21 @@ public class Main {
             //System.out.println(ray.getCurrentRay());
             if(!player.isInsideAGUI() && !(Player.abilityInUse && Player.playableCharacter.contains("Nino"))){
                 for(EnemyEntity enemy : Entity.enemies){
-                    enemy.pathFindertick(player, enemy);
+                    if(Player.playableCharacter.equalsIgnoreCase("magi") && Player.abilityInUse && Player.magiAbilityTicks < 100){
+                        enemy.pathFindertick(player, enemy, true, EnemyEntity.Speed);
+                    }else{
+                        enemy.pathFindertick(player, enemy, false, EnemyEntity.Speed);
+                    }
                 }
+                if(Player.playableCharacter.equalsIgnoreCase("magi") && Player.abilityInUse && Player.magiAbilityTicks < 100){
+                    Player.magiAbilityTicks++;
+                }
+            }
+            if(Player.magiAbilityTicks == 100 && Player.abilityInUse){
+                Player.abilityOnCooldown = true;
+                Player.abilityInUse = false;
+                Player.magiAbilityTicks = 0;
+                GUIText.replaceText("Ability", "Ability (E): " + Player.ability + " (Cooldown " + (Player.abilityCooldownKills - Player.playerCooldownStat) + " kills)");
             }
             for(EnemyEntity enemy : Entity.enemies){
                 enemy.tick(enemy);
@@ -190,7 +208,6 @@ public class Main {
             }
 
 
-            GUIS.clickPlayerInventory();
             //light.setPosition(camera.getPosition());
             //System.out.println(MathHelper.distanceBetweenObjects(new Location(1,5,1), camera.getPosition()));
             //System.out.println(camera.getPosition().toString());

@@ -40,6 +40,15 @@ public class GUIRenderer {
                 GL11.glDrawArrays(GL11.GL_TRIANGLE_STRIP, 0, guiModel.getVertexCount());
             }
         }
+        for(GuiTexture gui : GUIS.shopGUI){
+            if(gui.getTexture() != 0) {
+                GL13.glActiveTexture(GL13.GL_TEXTURE0);
+                GL11.glBindTexture(GL11.GL_TEXTURE_2D, gui.getTexture());
+                Matrix4f matrix4f = MathHelper.create2DTransformationMatrix(gui.getPosition(), gui.getScale(), gui.getRotation());
+                shader.loadTransformation(matrix4f);
+                GL11.glDrawArrays(GL11.GL_TRIANGLE_STRIP, 0, guiModel.getVertexCount());
+            }
+        }
         for(int i = 0; i < GUIS.slotTextures.size(); i++){
             GuiTexture gui = GUIS.slotTextures.get(i);
             if(gui != null) {
