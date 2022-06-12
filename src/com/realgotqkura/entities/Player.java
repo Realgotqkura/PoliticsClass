@@ -14,10 +14,14 @@ import com.realgotqkura.terrain.Terrain;
 import com.realgotqkura.utilities.*;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.glfw.GLFW;
+import org.lwjgl.opengl.GL;
+import org.lwjgl.opengl.NVUniformBufferUnifiedMemory;
+import org.lwjgl.system.CallbackI;
 import org.lwjglx.util.vector.Vector2f;
 
 import java.nio.DoubleBuffer;
 import java.util.*;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadLocalRandom;
 
 import static org.lwjgl.glfw.GLFW.*;
@@ -71,6 +75,14 @@ public class Player extends Entity{
     public static int waveStartedAt; //Za Ceco abilityto bahti deformiraniq
     public static int abilityCooldownKills = 0; //The amount of kills needed to satisfy the cooldown. Its not the same
     //as cooldownKills. cooldownKills is just to track the amount of kills left of the cooldown;
+    public static List<String> months = new ArrayList<>(Arrays.asList("January","February", "March", "April", "May", "June",
+            "July", "August","September","October","November","December"));
+    public static String currentMonth = "January";
+    public static String lastMonth = "January";
+    public static int monthIndex = 1;
+    public static int lubumiraCachedEntities = 0;
+    public static int currentlyBuying = 0;
+    private boolean Bclicked = false;
 
     public Player(TexturedModel model, Location loc, float rotX, float rotY, float rotZ, float scale, Loader loader) {
         super(model, loc, rotX, rotY, rotZ, scale);
@@ -279,7 +291,7 @@ public class Player extends Entity{
                         if(!abilityOnCooldown){
                             abilityOnCooldown = true;
                             for(EnemyEntity enemy : Entity.enemies){
-                                enemy.hurtEnemy(1 + (2 * Player.playerAbilityDamageStat)); //Hardcoded 1 for now lol
+                                enemy.hurtEnemy(1 + (2 * Player.playerAbilityDamageStat), enemy); //Hardcoded 1 for now lol
                             }
                             GUIText.replaceText("Ability", "Ability (E): " + ability + " (Cooldown " + abilityCooldownKills + " kills left)");
                         }
@@ -296,6 +308,7 @@ public class Player extends Entity{
                             Timer t = new Timer();
                             long period = 1*1000; //For example 1 second
                             long delay = 1*1000; //For example 1 second
+                            Main.timers.add(t);
                             t.schedule(new TimerTask() {
                                 int index = 0;
                                 @Override
@@ -303,10 +316,11 @@ public class Player extends Entity{
                                     if(index < 10){
                                         for(EnemyEntity entity : Entity.enemies){
                                             EnemyEntity.Speed = 0.11F / 2;
-                                            entity.hurtEnemy(0.2F);
+                                            entity.hurtEnemy(0.2F, entity);
                                         }
                                     }else{
                                         EnemyEntity.Speed *= 2;
+                                        Main.timers.remove(t);
                                         t.cancel();
                                     }
                                     index++;
@@ -315,7 +329,18 @@ public class Player extends Entity{
                             abilityOnCooldown = true;
                             GUIText.replaceText("Ability", "Ability (E): " + ability + " (Cooldown " + abilityCooldownKills + " kills left)");
                         }
-
+                        break;
+                    case "Lubumira":
+                        int random = ThreadLocalRandom.current().nextInt(0,100+1);
+                        if(random == 69){
+                            waveTest++;
+                        }
+                        if(waveTest % 2 != 0){
+                            Entity.deleteEntityCache.addAll(Entity.enemies);
+                            lubumiraCachedEntities += Entity.enemies.size();
+                            playerCoins += Entity.enemies.size();
+                        }
+                        break;
                 }
                 }
             }
@@ -369,6 +394,70 @@ public class Player extends Entity{
             }
         }
 
+        if(GLFW.glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS){
+            if(!Bclicked){
+                Bclicked = true;
+                switch(currentlyBuying){
+                    case 1:
+                        if(SaveableData.EMO == 0 && SaveableData.GOLD >= 15){
+                            SaveableData.EMO = 1;
+                            SaveableData.changeGold(SaveableData.GOLD - 15);
+                            GUIS.slotTextures.replace(37, new GuiTexture(Main.loader.loadTexture("EmoResized"), GUIS.playerInventoryGUIs.get(37).getPosition(), new Vector2f(0.05F, 0.06F), new RotationVector(0, 0, 0), "Emo"));
+                        }
+                        break;
+                    case 2:
+                        if(SaveableData.VASKO == 0 && SaveableData.GOLD >= 18){
+                            SaveableData.VASKO = 1;
+                            SaveableData.changeGold(SaveableData.GOLD - 18);
+                            GUIS.slotTextures.replace(36, new GuiTexture(Main.loader.loadTexture("VaskoResized"), GUIS.playerInventoryGUIs.get(36).getPosition(), new Vector2f(0.05F, 0.06F), new RotationVector(0, 0, 0), "Vasko"));
+                        }
+                        break;
+                    case 3:
+                        if(SaveableData.DINAMIXO == 0 && SaveableData.GOLD >= 10){
+                            SaveableData.DINAMIXO = 1;
+                            SaveableData.changeGold(SaveableData.GOLD - 10);
+                            GUIS.slotTextures.replace(35, new GuiTexture(Main.loader.loadTexture("Ceco_Resized"), GUIS.playerInventoryGUIs.get(35).getPosition(), new Vector2f(0.05F, 0.06F), new RotationVector(0, 0, 0), "Ceco"));
+                        }
+                        break;
+                    case 4:
+                        if(SaveableData.LUBUMIRA == 0 && SaveableData.GOLD >= 12){
+                            SaveableData.LUBUMIRA = 1;
+                            SaveableData.changeGold(SaveableData.GOLD - 12);
+                            GUIS.slotTextures.replace(34, new GuiTexture(Main.loader.loadTexture("LubumiraResized"), GUIS.playerInventoryGUIs.get(34).getPosition(), new Vector2f(0.05F, 0.06F), new RotationVector(0, 0, 0), "Lubumira"));
+                        }
+                        break;
+                    case 5:
+                        if(SaveableData.MAGI == 0 && SaveableData.GOLD >= 13){
+                            SaveableData.MAGI = 1;
+                            SaveableData.changeGold(SaveableData.GOLD - 13);
+                            GUIS.slotTextures.replace(33, new GuiTexture(Main.loader.loadTexture("MagiResized"), GUIS.playerInventoryGUIs.get(33).getPosition(), new Vector2f(0.05F, 0.06F), new RotationVector(0, 0, 0), "Magi"));
+                        }
+                        break;
+                    case 6:
+                        if(SaveableData.NAD_T == 0 && SaveableData.GOLD >= 14){
+                            SaveableData.NAD_T = 1;
+                            SaveableData.changeGold(SaveableData.GOLD - 14);
+                            GUIS.slotTextures.replace(32, new GuiTexture(Main.loader.loadTexture("NadTResized"), GUIS.playerInventoryGUIs.get(32).getPosition(), new Vector2f(0.05F, 0.06F), new RotationVector(0, 0, 0), "NadT"));
+                        }
+                        break;
+                    case 7:
+                        if(SaveableData.KRISTIAN == 0 && SaveableData.GOLD >= 6){
+                            SaveableData.KRISTIAN = 1;
+                            SaveableData.changeGold(SaveableData.GOLD - 6);
+                            GUIS.slotTextures.replace(31, new GuiTexture(Main.loader.loadTexture("KristianResized"), GUIS.playerInventoryGUIs.get(31).getPosition(), new Vector2f(0.05F, 0.06F), new RotationVector(0, 0, 0), "Kristian"));
+                        }
+                }
+            }
+        }
+
+        if(GLFW.glfwGetKey(window, GLFW_KEY_9) == GLFW_PRESS){
+            SaveableData.changeGold(20);
+        }
+
+        if(GLFW.glfwGetKey(window, GLFW_KEY_B) == GLFW_RELEASE){
+            Bclicked = false;
+        }
+
         if(GLFW.glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS){
             if(isInsideAGUI()){
                 GUIS.guis.get(0).setTexture(loader.loadTexture("cursor"));
@@ -382,11 +471,9 @@ public class Player extends Entity{
             escClicked = false;
         }
 
-
         if(GLFW.glfwGetMouseButton(window, 0) == GLFW_PRESS && !mousePressed){
             mousePressed = true;
                 if(isInsideAGUI() && GUIS.inCharacterInv){
-                    GUIText.replaceText(":Gold", Math.round(Math.floor(playerCoins)) + " :Coins");
                     GuiTexture cursor = GUIS.guis.get(0);
                     for(int i = 0; i < GUIS.playerInventoryGUIs.size(); i++){
                         GuiTexture gui = GUIS.playerInventoryGUIs.get(i);
@@ -404,6 +491,7 @@ public class Player extends Entity{
                                     playableCharacter = "Mitko";
                                     ability = "Shuriken jutsu";
                                     abilityCooldownKills = 5;
+                                    GUIText passiveMitko = new GUIText("Passive: 25% chance for double cooldown reduction", 2.5F, Main.primaryFont, new Vector2f(0,0.8F), 1F, false);
                                     break;
                                 case 40:
                                     playableCharacter = "Vladi";
@@ -414,57 +502,184 @@ public class Player extends Entity{
                                     playableCharacter = "Gosho";
                                     ability = "Flaming Airstrike";
                                     abilityCooldownKills = 5;
+                                    WALK_SPEED += (WALK_SPEED / 2);
+                                    GUIText passiveGosho = new GUIText("Passive: 1.5x Speed", 3, Main.primaryFont, new Vector2f(0,0.8F), 0.7F, false);
                                     break;
                                 case 38:
                                     playableCharacter = "Lora";
                                     ability = "20/20 Vision";
                                     abilityCooldownKills = 4;
+                                    playerCoinGainStat++;
+                                    GUIText passiveLora = new GUIText("Passive: +1 Coin per kill", 3, Main.primaryFont, new Vector2f(0,0.8F), 0.7F, false);
                                     break;
                                 case 37:
-                                    playableCharacter = "Emo";
-                                    ability = "Flashy Raijin";
-                                    abilityCooldownKills = 3; //Gonna be upgradeable to 1 or 0 idk yet
+                                    if(SaveableData.EMO == 0){
+                                        try{
+                                            GUIText.replaceTextLoc("Shop:", new Vector2f(0.73F, 0F));
+                                            GUIText.replaceText("Shop:", "Buy: 15G (B)");
+                                            currentlyBuying = 1;
+                                        }catch(NullPointerException e){
+                                            GUIText.replaceTextLoc("Buy:", new Vector2f(0.73F, 0F));
+                                            GUIText.replaceText("Buy:", "Buy: 15G (B)");
+                                            currentlyBuying = 1;
+                                        }
+                                    }else {
+                                        playableCharacter = "Emo";
+                                        ability = "Flashy Raijin";
+                                        abilityCooldownKills = 3; //Gonna be upgradeable to 1 or 0 idk yet
+                                        GUIText passiveEmo = new GUIText("Passive: 2x damage every 3rd wave", 3F, Main.primaryFont, new Vector2f(0, 0.8F), 0.7F, false);
+                                    }
                                     break;
                                 case 36:
-                                    playableCharacter = "Vasko";
-                                    ability = "Earthquake"; //Mnogo milo
-                                    abilityCooldownKills = 4; //Early game trash but when shop is introduced it will be juicy
+                                    if(SaveableData.VASKO == 0){
+                                        try{
+                                            GUIText.replaceTextLoc("Shop:", new Vector2f(0.73F, 0F));
+                                            GUIText.replaceText("Shop:", "Buy: 18G (B)");
+                                            currentlyBuying = 2;
+                                        }catch(NullPointerException e){
+                                            GUIText.replaceTextLoc("Buy:", new Vector2f(0.73F, 0F));
+                                            GUIText.replaceText("Buy:", "Buy: 18G (B)");
+                                            currentlyBuying = 2;
+                                        }
+                                    }else {
+                                        playableCharacter = "Vasko";
+                                        ability = "Earthquake"; //Mnogo milo
+                                        abilityCooldownKills = 4; //Early game trash but when shop is introduced it will be juicy
+                                        GUIText passiveVasko = new GUIText("Passive: 2x Enemy HP and 1.5x Enemy Speed", 2.5F, Main.primaryFont, new Vector2f(0, 0.8F), 1F, false);
+                                    }
                                     break;
                                 case 35:
-                                    playableCharacter = "Ceco";
-                                    ability = "Deformed Brain";
-                                    cooldownOnWave = true;
-                                    GUIText statIncreaseTxt = new GUIText("Last stat UP:", 3, Main.primaryFont, new Vector2f(0,0.8F), 0.7F, false);
+                                    if(SaveableData.DINAMIXO == 0){
+                                        try{
+                                            GUIText.replaceTextLoc("Shop:", new Vector2f(0.73F, 0F));
+                                            GUIText.replaceText("Shop:", "Buy: 10G (B)");
+                                            currentlyBuying = 3;
+                                        }catch(NullPointerException e){
+                                            GUIText.replaceTextLoc("Buy:", new Vector2f(0.73F, 0F));
+                                            GUIText.replaceText("Buy:", "Buy: 10G (B)");
+                                            currentlyBuying = 3;
+                                        }
+                                    }else {
+                                        playableCharacter = "Ceco";
+                                        ability = "Deformed Brain";
+                                        cooldownOnWave = true;
+                                        GUIText statIncreaseTxt = new GUIText("Last stat UP:", 3, Main.primaryFont, new Vector2f(0, 0.8F), 0.7F, false);
+                                    }
                                     break;
                                 case 34:
-                                    playableCharacter = "Lubumira";
-                                    ability = "KAMUI";
-                                    abilityCooldownKills = 0;
+                                    if(SaveableData.LUBUMIRA == 0){
+                                        try{
+                                            GUIText.replaceTextLoc("Shop:", new Vector2f(0.73F, 0F));
+                                            GUIText.replaceText("Shop:", "Buy: 12G (B)");
+                                            currentlyBuying = 4;
+                                        }catch(NullPointerException e){
+                                            GUIText.replaceTextLoc("Buy:", new Vector2f(0.73F, 0F));
+                                            GUIText.replaceText("Buy:", "Buy: 12G (B)");
+                                            currentlyBuying = 4;
+                                        }
+                                    }else {
+                                        playableCharacter = "Lubumira";
+                                        ability = "KAMUI";
+                                        abilityCooldownKills = 0;
+                                        GUIText passiveLubumira = new GUIText("Passive: On ability Use 1% chance for +1 wave", 2.5F, Main.primaryFont, new Vector2f(0, 0.8F), 1F, false);
+                                    }
                                     break;
                                 case 33:
-                                    playableCharacter = "Magi";
-                                    ability = "Negative Attraction";
-                                    abilityCooldownKills = 3;
+                                    if(SaveableData.MAGI == 0){
+                                        try{
+                                            GUIText.replaceTextLoc("Shop:", new Vector2f(0.73F, 0F));
+                                            GUIText.replaceText("Shop:", "Buy: 13G (B)");
+                                            currentlyBuying = 5;
+                                        }catch(NullPointerException e){
+                                            GUIText.replaceTextLoc("Buy:", new Vector2f(0.73F, 0F));
+                                            GUIText.replaceText("Buy:", "Buy: 13G (B)");
+                                            currentlyBuying = 5;
+                                        }
+                                    }else {
+                                        playableCharacter = "Magi";
+                                        ability = "Negative Attraction";
+                                        abilityCooldownKills = 3;
+                                        GUIText passiveMagi = new GUIText("Passive: Each wave +1HP", 3F, Main.primaryFont, new Vector2f(0, 0.8F), 0.7F, false);
+                                    }
                                     break;
                                 case 32:
-                                    playableCharacter = "Nad.T";
-                                    ability = "Rose Thorns";
-                                    abilityCooldownKills = 6;
+                                    if(SaveableData.NAD_T == 0){
+                                        try{
+                                            GUIText.replaceTextLoc("Shop:", new Vector2f(0.73F, 0F));
+                                            GUIText.replaceText("Shop:", "Buy: 14G (B)");
+                                            currentlyBuying = 6;
+                                        }catch(NullPointerException e){
+                                            GUIText.replaceTextLoc("Buy:", new Vector2f(0.73F, 0F));
+                                            GUIText.replaceText("Buy:", "Buy: 14G (B)");
+                                            currentlyBuying = 6;
+                                        }
+                                    }else {
+                                        playableCharacter = "Nad.T";
+                                        ability = "Rose Thorns";
+                                        abilityCooldownKills = 6;
+                                        GUIText passiveNAdt = new GUIText("Passive: Rose projectile On hit: -10% enemy speed", 2.5F, Main.primaryFont, new Vector2f(0, 0.8F), 1F, false);
+                                    }
                                     break;
+                                case 31:
+                                    if(SaveableData.KRISTIAN == 0) {
+                                        try{
+                                            GUIText.replaceTextLoc("Shop:", new Vector2f(0.76F, 0F));
+                                            GUIText.replaceText("Shop:", "Buy: 6G (B)");
+                                            currentlyBuying = 7;
+                                        }catch(NullPointerException e){
+                                            GUIText.replaceTextLoc("Buy:", new Vector2f(0.76F, 0F));
+                                            GUIText.replaceText("Buy:", "Buy: 6G (B)");
+                                            currentlyBuying = 7;
+                                        }
+                                    }else {
+                                        playableCharacter = "Kristian";
+                                        ability = "Gay Pride";
+                                        abilityCooldownKills = 0;
+                                        GUIText month = new GUIText("Current Month: January", 3, Main.primaryFont, new Vector2f(0, 0.8F), 0.7F, false);
+                                        Timer timer = new Timer();
+                                        long period = 1 * 10 * 1000; //For example 10 second
+                                        long delay = 1 * 10 * 1000; //For example 10 second
+                                        Main.timers.add(timer);
+                                        timer.schedule(new TimerTask() {
+                                            @Override
+                                            public void run() {
+                                                lastMonth = months.get(monthIndex);
+                                                monthIndex++;
+                                                currentMonth = months.get(monthIndex);
+                                                if (monthIndex >= 11) {
+                                                    monthIndex = 0;
+                                                }
+                                            }
+                                        }, delay, period);
+                                        break;
+                                    }
                             }
 
                         }
                     }
-                    GUIText text = new GUIText("Character: " + playableCharacter,3, Main.primaryFont, new Vector2f(0,0.2F), 0.5F, false);
-                    GUIText AbiltyT = new GUIText("Ability (E): " + ability + " (Ready)",3, Main.primaryFont, new Vector2f(0,0.9F), 1F, false);
-                    if(playableCharacter.equalsIgnoreCase("ceco")){
-                        GUIText.replaceText("Ability (E):", "Ability (E): " + ability + " (Always Active)");
+                    if(playableCharacter != null){
+                        GUIText text = new GUIText("Character: " + playableCharacter,3, Main.primaryFont, new Vector2f(0,0.2F), 0.5F, false);
+                        GUIText AbiltyT = new GUIText("Ability (E): " + ability + " (Ready)",3, Main.primaryFont, new Vector2f(0,0.9F), 1F, false);
+                        if(playableCharacter.equalsIgnoreCase("ceco")){
+                            GUIText.replaceText("Ability (E):", "Ability: " + ability + " (Always Active)");
+                        }else if(playableCharacter.equalsIgnoreCase("kristian")){
+                            GUIText.replaceText("Ability (E):", "Ability: " + ability + " (Waiting for June)");
+                        }else if(playableCharacter.equalsIgnoreCase("lubumira")){
+                            GUIText.replaceText("Ability (E):", "Ability: " + ability + " (Only on Odd waves)");
+                        }
+                        insideAGUI = false;
+                        glfwSetInputMode(window, GLFW.GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+                        GUIS.closePlayerInventory();
+                        GUIS.guis.get(0).setPosition(new Vector2f(0,0));
+                        GUIS.guis.get(0).setTexture(Main.loader.loadTexture("cursor"));
+                        GUIText.replaceText(":Gold", Math.round(Math.floor(playerCoins)) + " :Coins");
+                        try{
+                            GUIText.replaceTextLoc("Buy:", new Vector2f(0.82F, 0F));
+                            GUIText.replaceText("Buy:", "Shop: R");
+                        }catch(NullPointerException ignored){
+
+                        }
                     }
-                    insideAGUI = false;
-                    glfwSetInputMode(window, GLFW.GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-                    GUIS.closePlayerInventory();
-                    GUIS.guis.get(0).setPosition(new Vector2f(0,0));
-                    GUIS.guis.get(0).setTexture(Main.loader.loadTexture("cursor"));
                     /*
                     if(clickedSlot < 69 && clickedSlot > 0){
                         try{
@@ -542,12 +757,20 @@ public class Player extends Entity{
                         }
                     }
                 }else{
-                    if(Entity.projectiles.size() <= 3){
-                        Main.renderer.addEntity(new Projectile(models.craftingTable(), new Location(player.getPosition().getX() + 0.2F, player.getPosition().getY(), player.getPosition().getZ() + 0.2F), 180,0,0, 0.5F, new Vector2f(player.getRotY(), player.getRotZ()), 60, ProjectileType.DEFAULT));
-                        if(Player.abilityInUse && playableCharacter.contains("Lora")){
-                            Main.renderer.addEntity(new Projectile(models.craftingTable(), new Location(player.getPosition().getX() + 0.2F, player.getPosition().getY() + 1, player.getPosition().getZ() + 0.2F), 180,0,0, 0.5F, new Vector2f(player.getRotY(), player.getRotZ()), 60, ProjectileType.DEFAULT));
+                    if(playableCharacter.equalsIgnoreCase("nad.t")){
+                        if(Entity.projectiles.size() <= 3){
+                            Main.renderer.addEntity(new Projectile(models.Rose(), new Location(player.getPosition().getX() + 0.2F, player.getPosition().getY(), player.getPosition().getZ() + 0.2F), 0,0,0, 0.05F, new Vector2f(player.getRotY(), player.getRotZ()), 60, ProjectileType.THORNS));
+                        }
+                    }else if(!playableCharacter.equalsIgnoreCase("kristian") && !currentMonth.equalsIgnoreCase("June")){
+                        if(Entity.projectiles.size() <= 3){
+                            Main.renderer.addEntity(new Projectile(models.craftingTable(), new Location(player.getPosition().getX() + 0.2F, player.getPosition().getY(), player.getPosition().getZ() + 0.2F), 180,0,0, 0.5F, new Vector2f(player.getRotY(), player.getRotZ()), 60, ProjectileType.DEFAULT));
+                            if(Player.abilityInUse && playableCharacter.contains("Lora")){
+                                Main.renderer.addEntity(new Projectile(models.craftingTable(), new Location(player.getPosition().getX() + 0.2F, player.getPosition().getY() + 1, player.getPosition().getZ() + 0.2F), 180,0,0, 0.5F, new Vector2f(player.getRotY(), player.getRotZ()), 60, ProjectileType.DEFAULT));
+                            }
                         }
                     }
+
+
                         /*
                         for(Entity entity : Entity.entities){
                             if(MathHelper.isInside(Location.Vec3toLocation(Main.ray.getCurrentTerrainPoint()),
@@ -578,16 +801,6 @@ public class Player extends Entity{
 
                      */
 
-                        if(waveEnded){
-                            System.out.println("NIFGA");
-                            for(int i = 0; i < (waveTest * 1.5) + 5; i++){
-                                int randomX = ThreadLocalRandom.current().nextInt(-100,100 + 1);
-                                int randomZ = ThreadLocalRandom.current().nextInt(-100, 100 + 1);
-                                EnemyEntity enemyEntity = new EnemyEntity(models.trumpEnemy(), new Location(this.getPosition().getX() + randomX, this.getPosition().getY() + 5, this.getPosition().getZ() + randomZ), 180,0,180, 4, 10);
-                                Main.renderer.addEntity(enemyEntity);
-                            }
-                            waveEnded = false;
-                        }
                     }
 
         }

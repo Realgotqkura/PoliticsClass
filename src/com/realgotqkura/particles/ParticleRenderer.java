@@ -5,12 +5,13 @@ import com.realgotqkura.entities.Camera;
 import com.realgotqkura.models.RawModel;
 import com.realgotqkura.utilities.MathHelper;
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL30;
 import org.lwjglx.util.vector.Matrix4f;
 import org.lwjglx.util.vector.Vector3f;
 
 import java.util.List;
-
+import java.util.Map;
 
 
 public class ParticleRenderer {
@@ -28,12 +29,17 @@ public class ParticleRenderer {
 		shader.stop();
 	}
 	
-	protected void render(List<Particle> particles, Camera camera){
+	protected void render(Map<ParticleTexture ,List<Particle>> particles, Camera camera){
 		Matrix4f viewMatrix = MathHelper.createViewMatrix(camera);
 		prepare();
-		for(Particle particle : particles){
-			updateModelViewMatrix(particle.getPosition(), particle.getRotation(), particle.getSize(), viewMatrix);
-			GL11.glDrawArrays(GL11.GL_TRIANGLE_STRIP,0, quad.getVertexCount());
+		for(ParticleTexture texture : particles.keySet()){
+			GL13.glActiveTexture(GL13.GL_TEXTURE0);
+			GL11.glBindTexture(GL11.GL_TEXTURE_2D, texture.getTextureId());
+			for(Particle particle : particles.get(texture)){
+				updateModelViewMatrix(particle.getPosition(), particle.getRotation(), particle.getSize(), viewMatrix);
+				shader.loadTextureCoordsInfo(particle.getTexOffset1(), particle.getTexOffset2(), texture.getNumberOfRows(), particle.getBlend());
+				GL11.glDrawArrays(GL11.GL_TRIANGLE_STRIP,0, quad.getVertexCount());
+			}
 		}
 		finishRendering();
 	}

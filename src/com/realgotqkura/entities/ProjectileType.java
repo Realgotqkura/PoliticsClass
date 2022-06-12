@@ -1,5 +1,5 @@
 package com.realgotqkura.entities;
 
 public enum ProjectileType {
-    DEFAULT, SHURIKEN, AMATERASU, BOMB
+    DEFAULT, SHURIKEN, AMATERASU, BOMB, GAY, THORNS
 }

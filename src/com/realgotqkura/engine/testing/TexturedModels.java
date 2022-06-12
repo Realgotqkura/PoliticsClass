@@ -3,6 +3,7 @@ package com.realgotqkura.engine.testing;
 import com.realgotqkura.engine.Loader;
 import com.realgotqkura.engine.ModelData;
 import com.realgotqkura.engine.OBJLoader;
+import com.realgotqkura.main.Main;
 import com.realgotqkura.models.RawModel;
 import com.realgotqkura.models.TexturedModel;
 import com.realgotqkura.textures.ModelTexture;
@@ -23,12 +24,29 @@ public class TexturedModels {
         return new TexturedModel(loader.loadtoVao(data.getVertices(),data.getTextureCoords(),data.getNormals(),data.getIndices()), table, "bomb");
     }
 
+
+    public TexturedModel Rose(){
+        ModelTexture table = new ModelTexture(loader.loadTexture("rose_texture"));
+        //table.setTransparency(true);
+        //table.setFakeLight(true);
+        ModelData data = OBJLoader.loadOBJModel("rose");
+        return new TexturedModel(loader.loadtoVao(data.getVertices(),data.getTextureCoords(),data.getNormals(),data.getIndices()), table, "shuriken");
+    }
+
     public TexturedModel shuriken(){
         ModelTexture table = new ModelTexture(loader.loadTexture("metal"));
         table.setTransparency(true);
         table.setFakeLight(true);
         ModelData data = OBJLoader.loadOBJModel("shuriken");
         return new TexturedModel(loader.loadtoVao(data.getVertices(),data.getTextureCoords(),data.getNormals(),data.getIndices()), table, "shuriken");
+    }
+
+    public static TexturedModel craftingTableS(){
+        ModelTexture table = new ModelTexture(Main.loader.loadTexture("CraftingTableTex"));
+        table.setTransparency(true);
+        table.setFakeLight(true);
+        ModelData data = OBJLoader.loadOBJModel("CraftingTable");
+        return new TexturedModel(Main.loader.loadtoVao(data.getVertices(),data.getTextureCoords(),data.getNormals(),data.getIndices()), table, "CraftingTable");
     }
 
     public TexturedModel craftingTable(){

@@ -16,6 +16,7 @@ import com.realgotqkura.models.RawModel;
 import com.realgotqkura.models.TexturedModel;
 import com.realgotqkura.particles.Particle;
 import com.realgotqkura.particles.ParticleMaster;
+import com.realgotqkura.particles.ParticleTexture;
 import com.realgotqkura.terrain.Terrain;
 import com.realgotqkura.textures.ModelTexture;
 import com.realgotqkura.utilities.*;
@@ -29,10 +30,8 @@ import org.lwjglx.util.vector.Vector3f;
 import java.awt.*;
 import java.io.File;
 import java.math.MathContext;
-import java.util.ArrayList;
+import java.util.*;
 import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class Main {
@@ -49,9 +48,11 @@ public class Main {
     public static List<Terrain> terrains = new ArrayList<>();
     private List<Entity> entities = new ArrayList<>();
     public static Entity holdedEntity;
-    private TexturedModels models;
+    public static TexturedModels models;
     public static FontType primaryFont;
     public static Terrain currentTerrain; //The current terrain that the player is standing on
+    public static Map<String, ParticleTexture> particleTexture = new HashMap<>();
+    public static List<Timer> timers = new ArrayList<>();
 
 
     public Main(){
@@ -67,9 +68,12 @@ public class Main {
         GUIText text = new GUIText("Wave:",3 , primaryFont, new Vector2f(0,0), 0.5F, false);
         GUIText textHP = new GUIText("Health: " + Player.MAX_HEALTH,3, primaryFont, new Vector2f(0F,0.1F), 0.5F, false);
         GUIText goldTxt = new GUIText(SaveableData.GOLD + " :Gold",3, primaryFont, new Vector2f(0F,0.3F), 0.5F, false);
-        GUIText Shop = new GUIText("Shop: R",3, primaryFont, new Vector2f(0.82F,0.0F), 0.5F, false);
+        GUIText Shop = new GUIText("Shop: R",3F, primaryFont, new Vector2f(0.82F,0.0F), 0.5F, false);
         ParticleMaster.init(loader, renderer.getProjectionMatrix());
 
+        particleTexture.put("Smoke", new ParticleTexture(loader.loadTexture("Smoke"), 8));
+        particleTexture.put("Fire", new ParticleTexture(loader.loadTexture("fireAtlas2"), 4));
+        particleTexture.put("Gay", new ParticleTexture(loader.loadTexture("GayParticle"), 1));
         presets = new TerrainPresets(loader);
         guiRenderer = new GUIRenderer(loader);
         light = new Light(new Vector3f(0,1000,0), new Vector3f(1,1,1));
@@ -92,7 +96,7 @@ public class Main {
         ModelTexture playerTexture = new ModelTexture(loader.loadTexture("metal"));
         player = new Player(new TexturedModel(playerModel, playerTexture, "player"), new Location(1,5,1),1,1,1,1, loader);
         //Entity craftingTable = new Entity(models.craftingTable(), player.getPosition(), 180,0,180, 2);
-        EnemyEntity trumpEnemy = new EnemyEntity(models.trumpEnemy(), new Location(player.getPosition().getX() + 10, player.getPosition().getY(), player.getPosition().getZ() + 10), 180,0,180, 4, 10);
+        EnemyEntity trumpEnemy = new EnemyEntity(models.trumpEnemy(), new Location(player.getPosition().getX() + 10, player.getPosition().getY(), player.getPosition().getZ() + 10), 180,0,180, 4, 10, EnemyEntity.Speed);
         for(Entity entity : presets.randomPreset("heightmap")){
             entities.add(entity);
         }
@@ -106,16 +110,28 @@ public class Main {
         run();
     }
 
-
     public void run(){
         Player.insideAGUI = true;
         GUIS.loadPlayerInventory();
+        double previousTime = GLFW.glfwGetTime();
+        int frameCount = 0;
         //GUIS.loadShopGUI();
         GUIS.guis.get(0).setPosition(new Vector2f(0,0));
         while(!DisplayManager.shouldClose()){
+            double currentTime = GLFW.glfwGetTime();
+            frameCount++;
+            // If a second has passed.
+            if(currentTime - previousTime >= 1.0 )
+            {
+                // Display the frame count here any way you want.
+                GLFW.glfwSetWindowTitle(DisplayManager.window, "Game FPS:" + frameCount);
+
+                frameCount = 0;
+                previousTime = currentTime;
+            }
             //game loop and rendering
             ray.update();
-            ParticleMaster.update();
+            ParticleMaster.update(camera);
             for(Terrain terrain : terrains){
                 if(terrain.getX() <= player.getPosition().getX()) {
                     if(terrain.getX() + Terrain.SIZE > player.getPosition().getX()) {
@@ -130,13 +146,24 @@ public class Main {
                     }
                 }
             }
+            if(!Player.currentMonth.equals(Player.lastMonth)){
+                GUIText.replaceText("Current Month:", "Current Month: " + Player.months.get(Player.monthIndex));
+                if(Player.currentMonth.equalsIgnoreCase("June")){
+                    GUIText.replaceText("Ability:", "Ability: " + Player.ability + " (ACTIVE)");
+                }else{
+                    GUIText.replaceText("Ability:", "Ability: " + Player.ability + " (Waiting for June)");
+                }
+            }
+            if(Player.currentMonth.equalsIgnoreCase("June") && Player.playableCharacter.equalsIgnoreCase("kristian")){
+                Projectile.generateRay(new Vector2f(player.getRotY(), player.getRotZ()), 50, player.getPosition());
+            }
             //System.out.println(ray.getCurrentRay());
             if(!player.isInsideAGUI() && !(Player.abilityInUse && Player.playableCharacter.contains("Nino"))){
                 for(EnemyEntity enemy : Entity.enemies){
                     if(Player.playableCharacter.equalsIgnoreCase("magi") && Player.abilityInUse && Player.magiAbilityTicks < 100){
-                        enemy.pathFindertick(player, enemy, true, EnemyEntity.Speed);
+                        enemy.pathFindertick(player, enemy, true, enemy.getSeperateSpeed());
                     }else{
-                        enemy.pathFindertick(player, enemy, false, EnemyEntity.Speed);
+                        enemy.pathFindertick(player, enemy, false, enemy.getSeperateSpeed());
                     }
                 }
                 if(Player.playableCharacter.equalsIgnoreCase("magi") && Player.abilityInUse && Player.magiAbilityTicks < 100){
@@ -193,18 +220,38 @@ public class Main {
             }
             if(Entity.enemies.size() <= 0){
                 Player.waveTest++;
+                if(MathHelper.isEven(Player.waveTest) && Player.playableCharacter.equalsIgnoreCase("lubumira")){
+                    GUIText.replaceText("Ability:", "Ability: " + Player.ability + " (Only on Odd waves)");
+                }else if(!MathHelper.isEven(Player.waveTest) && Player.playableCharacter.equalsIgnoreCase("lubumira")){
+                    GUIText.replaceText("Ability:", "Ability: " + Player.ability + " (Ready)");
+                }
                 GUIText.replaceText("Wave:", "Wave: " + Player.waveTest);
                 Player.waveEnded = true;
             }
             if(Player.waveEnded){
-                System.out.println("NIFGA");
-                for(int i = 0; i < (Player.waveTest * 1.5) + 5; i++){
-                    int randomX = ThreadLocalRandom.current().nextInt(-100,100 + 1);
-                    int randomZ = ThreadLocalRandom.current().nextInt(-100, 100 + 1);
-                    EnemyEntity enemyEntity = new EnemyEntity(models.trumpEnemy(), new Location(Player.player.getPosition().getX() + randomX, Player.player.getPosition().getY() + 5, Player.player.getPosition().getZ() + randomZ), 180,0,180, 4,10);
-                    Main.renderer.addEntity(enemyEntity);
+                if(MathHelper.isEven(Player.waveTest) && Player.playableCharacter.equalsIgnoreCase("lubumira")){
+                    for(int i = 0; i < ((Player.waveTest * 1.5) + 5) + Player.lubumiraCachedEntities; i++){
+                        int randomX = ThreadLocalRandom.current().nextInt(-100,100 + 1);
+                        int randomZ = ThreadLocalRandom.current().nextInt(-100, 100 + 1);
+                        EnemyEntity enemyEntity = new EnemyEntity(models.trumpEnemy(), new Location(Player.player.getPosition().getX() + randomX, Player.player.getPosition().getY() + 5, Player.player.getPosition().getZ() + randomZ), 180,0,180, 4,10, EnemyEntity.Speed);
+                        Main.renderer.addEntity(enemyEntity);
+                    }
+                }else {
+                    for (int i = 0; i < (Player.waveTest * 1.5) + 5; i++) {
+                        int shooter = ThreadLocalRandom.current().nextInt(0, 1 + 1);
+                        int randomX = ThreadLocalRandom.current().nextInt(-100, 100 + 1);
+                        int randomZ = ThreadLocalRandom.current().nextInt(-100, 100 + 1);
+                        EnemyEntity enemyEntity = new EnemyEntity(models.trumpEnemy(), new Location(Player.player.getPosition().getX() + randomX, Player.player.getPosition().getY() + 5, Player.player.getPosition().getZ() + randomZ), 180, 0, 180, 4, 10, EnemyEntity.Speed);
+                        Main.renderer.addEntity(enemyEntity);
+                    }
                 }
                 Player.waveEnded = false;
+                if(Player.waveTest % 5 == 0){
+                    SaveableData.GOLD++;
+                }
+                if(Player.playableCharacter.equalsIgnoreCase("magi")){
+                    Player.health++;
+                }
             }
 
 
@@ -219,6 +266,10 @@ public class Main {
         guiRenderer.cleanUp();
         renderer.cleanUp();
         loader.deleteVAOandVBOs();
+        for(Timer timer : timers){
+            timer.cancel();
+        }
+        timers.clear();
     }
 
 

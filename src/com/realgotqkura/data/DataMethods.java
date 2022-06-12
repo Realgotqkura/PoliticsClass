@@ -29,6 +29,20 @@ public class DataMethods {
             BufferedWriter bw = new BufferedWriter(new FileWriter(file));
             bw.write(Integer.toString(SaveableData.GOLD));
             bw.newLine();
+            bw.write(Integer.toString(SaveableData.VASKO));
+            bw.newLine();
+            bw.write(Integer.toString(SaveableData.MAGI));
+            bw.newLine();
+            bw.write(Integer.toString(SaveableData.EMO));
+            bw.newLine();
+            bw.write(Integer.toString(SaveableData.NAD_T));
+            bw.newLine();
+            bw.write(Integer.toString(SaveableData.DINAMIXO));
+            bw.newLine();
+            bw.write(Integer.toString(SaveableData.LUBUMIRA));
+            bw.newLine();
+            bw.write(Integer.toString(SaveableData.KRISTIAN));
+            bw.newLine();
             bw.close();
 
         }catch(IOException e){
@@ -45,8 +59,34 @@ public class DataMethods {
             int index = 0;
             Scanner scanner = new Scanner(new File(path));
             while(scanner.hasNextLine()){
-                if(index == 0){
-                    SaveableData.GOLD = Integer.parseInt(scanner.nextLine());
+                switch(index){
+                    case 0:
+                        SaveableData.GOLD = Integer.parseInt(scanner.nextLine());
+                        break;
+                    case 1:
+                        SaveableData.VASKO = Integer.parseInt(scanner.nextLine());
+                        break;
+                    case 2:
+                        SaveableData.MAGI = Integer.parseInt(scanner.nextLine());
+                        break;
+                    case 3:
+                        SaveableData.EMO = Integer.parseInt(scanner.nextLine());
+                        break;
+                    case 4:
+                        SaveableData.NAD_T = Integer.parseInt(scanner.nextLine());
+                        break;
+                    case 5:
+                        SaveableData.DINAMIXO = Integer.parseInt(scanner.nextLine());
+                        break;
+                    case 6:
+                        SaveableData.LUBUMIRA = Integer.parseInt(scanner.nextLine());
+                        break;
+                    case 7:
+                        SaveableData.KRISTIAN = Integer.parseInt(scanner.nextLine());
+                        break;
+                    case 8:
+                        SaveableData.GOLD = Integer.parseInt(scanner.nextLine());
+                        break;
                 }
                 index++;
             }

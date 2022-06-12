@@ -151,7 +151,10 @@ public class GUIText {
 	}
 
 
-	//Param contains: The text u wanna replace add the string that it contains
+	/*
+	 * @param contains
+	 *             - The text u wanna replace add the string that it contains
+	 */
 	public static void replaceText(String contains, String newText){
 		GUIText oldText = null;
 		for(GUIText text : TextMaster.texts.get(Main.primaryFont)){
@@ -162,6 +165,19 @@ public class GUIText {
 		}
 		assert oldText != null;
 		GUIText nText = new GUIText(newText, oldText.getFontSize(), oldText.getFont(), oldText.getPosition(), oldText.getMaxLineSize(), oldText.isCentered());
+		TextMaster.removeText(oldText);
+	}
+
+	public static void replaceTextLoc(String contains, Vector2f position){
+		GUIText oldText = null;
+		for(GUIText text : TextMaster.texts.get(Main.primaryFont)){
+			if(text.getText().contains(contains)){
+				oldText = text;
+				break;
+			}
+		}
+		assert oldText != null;
+		GUIText nText = new GUIText(oldText.textString, oldText.getFontSize(), oldText.getFont(), position, oldText.getMaxLineSize(), oldText.isCentered());
 		TextMaster.removeText(oldText);
 	}
 

@@ -103,6 +103,9 @@ public class MathHelper {
         return new float[]{x,z};
     }
 
+    public static boolean bool(int e){
+        return e != 0;
+    }
 
     public static int floor(float var0) {
         int var1 = (int)var0;

@@ -1,12 +1,16 @@
 package com.realgotqkura.entities;
 
+import com.realgotqkura.main.Main;
 import com.realgotqkura.models.TexturedModel;
 import com.realgotqkura.particles.Particle;
+import com.realgotqkura.particles.ParticleTexture;
 import com.realgotqkura.utilities.Location;
+import com.realgotqkura.utilities.MathHelper;
 import org.lwjglx.util.vector.Vector2f;
 import org.lwjglx.util.vector.Vector3f;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -61,10 +65,10 @@ public class Projectile extends Entity{
             case AMATERASU:
                 projectileDamage = 10 + (5 * Player.playerAbilityDamageStat);
                     for(int i = 0; i < 5; i++){
-                        int randomX = ThreadLocalRandom.current().nextInt(-20, 20 + 1);
-                        int randomZ = ThreadLocalRandom.current().nextInt(-20, 20 + 1);
-                        int randomY = ThreadLocalRandom.current().nextInt(-20,20 + 1);
-                        new Particle(this.getPosition().toVector3f(), new Vector3f(randomX,randomY,randomZ), 1,5,0.5F,0);
+                        int randomX = ThreadLocalRandom.current().nextInt(-10, 10 + 1);
+                        int randomZ = ThreadLocalRandom.current().nextInt(-10, 10 + 1);
+                        int randomY = ThreadLocalRandom.current().nextInt(0, 10 + 1);
+                        new Particle(this.getPosition().toVector3f(), new Vector3f(randomX,randomY,randomZ), 0,5,10F,0, Main.particleTexture.get("Smoke"));
                     }
                 break;
             case BOMB:
@@ -72,9 +76,42 @@ public class Projectile extends Entity{
                 this.setRotX(this.getRotX()+10);
                 projectileDamage = 10 + (3 * Player.playerAbilityDamageStat);
                 break;
+            case GAY:
+                for(int i = 0; i < 5; i++){
+                    int randomX = ThreadLocalRandom.current().nextInt(-10, 10 + 1);
+                    int randomZ = ThreadLocalRandom.current().nextInt(-10, 10 + 1);
+                    int randomY = ThreadLocalRandom.current().nextInt(0, 10 + 1);
+                    new Particle(this.getPosition().toVector3f(), new Vector3f(randomX,randomY,randomZ), 0,5,1F,0, Main.particleTexture.get("Gay"));
+                }
+                break;
+            case THORNS:
+                this.setRotZ(this.getRotZ()+10);
+                break;
         }
 
     }
+
+    public static void generateRay(Vector2f dir, int range, Location startingPoint){
+        List<Location> locations = new ArrayList<>();
+        locations.add(new Location(startingPoint.getX(), startingPoint.getY() - 1, startingPoint.getZ()));
+        for(int i = 0; i < range; i++){
+            float z = (float) (locations.get(locations.size()-1).getZ() + 0 * Math.cos(Math.toRadians(dir.x - 90)) - 1 * Math.cos(Math.toRadians(dir.x)));
+            float x = (float) (locations.get(locations.size()-1).getX() - 0 * Math.sin(Math.toRadians(dir.x - 90)) - 1 * Math.sin(Math.toRadians(dir.x)));
+            float y = (float) (locations.get(locations.size()-1).getY() - 0 * Math.sin(Math.toRadians(dir.y - 90)) - 1 * Math.sin(Math.toRadians(dir.y)));
+            locations.add(new Location(x,y,z));
+        }
+        for(Location loc : locations){
+            new Particle(loc.toVector3f(), new Vector3f(0,0,0), 0,0.2F,1F,0, Main.particleTexture.get("Gay"));
+            for(EnemyEntity entity : Entity.enemies){
+                if(MathHelper.isInside(loc,
+                        new Location(entity.getPosition().getX() - 2, entity.getPosition().getY() - entity.getScale() - 2, entity.getPosition().getZ() -2),
+                        new Location(entity.getPosition().getX() + 2, entity.getPosition().getY() + entity.getScale() + 2, entity.getPosition().getZ() + 2))) {
+                    entity.hurtEnemy(0.3F, entity);
+                }
+            }
+            }
+        locations.clear();
+        }
 
     public float getProjectileDamage(){
         return this.projectileDamage;

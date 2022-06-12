@@ -1,23 +1,30 @@
 package com.realgotqkura.entities;
 
 import com.realgotqkura.engine.MasterRenderer;
+import com.realgotqkura.engine.ModelData;
+import com.realgotqkura.engine.OBJLoader;
+import com.realgotqkura.engine.testing.TexturedModels;
 import com.realgotqkura.fontMeshCreator.GUIText;
 import com.realgotqkura.fontRendering.TextMaster;
 import com.realgotqkura.main.Main;
 import com.realgotqkura.models.TexturedModel;
 import com.realgotqkura.particles.Particle;
+import com.realgotqkura.particles.ParticleTexture;
 import com.realgotqkura.terrain.Terrain;
+import com.realgotqkura.textures.ModelTexture;
 import com.realgotqkura.utilities.Location;
 import com.realgotqkura.utilities.MathHelper;
+import org.lwjglx.util.vector.Vector2f;
 import org.lwjglx.util.vector.Vector3f;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class EnemyEntity extends Entity{
 
 
+    public boolean stunned = false;
+    private float seperateSpeed;
     public static float Speed = 0.11F;
     private TexturedModel model;
     private Location loc;
@@ -26,7 +33,7 @@ public class EnemyEntity extends Entity{
     private float health;
     private Projectile collidedProjectile;
 
-    public EnemyEntity(TexturedModel model, Location loc, float rotX, float rotY, float rotZ, float scale, int health) {
+    public EnemyEntity(TexturedModel model, Location loc, float rotX, float rotY, float rotZ, float scale, int health, float speed) {
         super(model, loc, rotX, rotY, rotZ, scale);
         model = this.model;
         loc = this.loc;
@@ -34,7 +41,9 @@ public class EnemyEntity extends Entity{
         rY = rotY;
         rZ = rotZ;
         this.health = health;
+        this.seperateSpeed = speed;
         scale = this.scale;
+        stunned = false;
         enemies.add(this); //Might cause problems
     }
 
@@ -81,6 +90,14 @@ public class EnemyEntity extends Entity{
         return false;
     }
 
+    public TexturedModel loadProjectile(){
+        ModelTexture table = new ModelTexture(Main.loader.loadTexture("CraftingTableTex"));
+        table.setTransparency(true);
+        table.setFakeLight(true);
+        ModelData data = OBJLoader.loadOBJModel("CraftingTable");
+        return new TexturedModel(Main.loader.loadtoVao(data.getVertices(),data.getTextureCoords(),data.getNormals(),data.getIndices()), table, "CraftingTable");
+    }
+
     private boolean checkPlayerCollision(Entity entity){
         if(MathHelper.isInside(Player.player.getPosition(),
                 new Location(entity.getPosition().getX() - 2, entity.getPosition().getY() - entity.getScale() - 2, entity.getPosition().getZ() -2),
@@ -112,9 +129,9 @@ public class EnemyEntity extends Entity{
                 int randomX = ThreadLocalRandom.current().nextInt(-100, 100 + 1);
                 int randomZ = ThreadLocalRandom.current().nextInt(-100, 100 + 1);
                 int randomY = ThreadLocalRandom.current().nextInt(-100,100 + 1);
-                new Particle(enemy.getPosition().toVector3f(), new Vector3f(randomX,randomY,randomZ), 1,5,1,0);
+                new Particle(enemy.getPosition().toVector3f(), new Vector3f(randomX,randomY,randomZ), 1,5,1F,0, Main.particleTexture.get("Fire"));
             }
-            hurtEnemy(collidedProjectile.getProjectileDamage());
+            hurtEnemy(collidedProjectile.getProjectileDamage(), (EnemyEntity) enemy);
             if(collidedProjectile.getProjectileType() == ProjectileType.BOMB){
                 for(EnemyEntity enemyEntity : Entity.enemies){
                     if(MathHelper.isInside(enemyEntity.getPosition(),
@@ -124,69 +141,14 @@ public class EnemyEntity extends Entity{
                     }
                 }
             }
-            if(this.health <= 0){
-                if(Player.playableCharacter.equalsIgnoreCase("ceco")){
-                    cecoAbility();
-                }
-                int cooldown = Player.abilityCooldownKills - Player.playerCooldownStat;
-                Player.addCoin(Player.playerCoinGainStat + 1);
-                GUIText.replaceText(":Coins", Math.round(Math.floor(Player.playerCoins)) + " :Coins");
-                for(int i = 0; i < 10; i++){
-                    int randomX = ThreadLocalRandom.current().nextInt(-50,  50 + 1);
-                    int randomZ = ThreadLocalRandom.current().nextInt(-50, 50 + 1);
-                    int randomY = ThreadLocalRandom.current().nextInt(-50,50 + 1);
-                    new Particle(enemy.getPosition().toVector3f(), new Vector3f(randomX,randomY,randomZ), 1,5,3F,0);
-                }
-                Entity.deleteEntityCache.add(enemy);
-                if(Player.abilityInUse){
-                    Player.playerKills++;
-                }
-                if(Player.abilityOnCooldown && !Player.abilityInUse){
-                    Player.cooldownKills++;
-                    GUIText.replaceText("Ability", "Ability (E): " + Player.ability + " (Cooldown " + (cooldown - Player.cooldownKills) + " kills left)");
-                }
-                switch(Player.playableCharacter){
-                    case "Nino":
-                        if(Player.playerKills >= 2){
-                            Player.abilityInUse = false;
-                            Player.playerKills = 0;
-                        }else if(Player.cooldownKills >= cooldown){
-                            Player.cooldownKills = 0;
-                            GUIText.replaceText("Ability", "Ability (E): " + Player.ability + " (Ready)");
-                            Player.abilityOnCooldown = false;
-                        }
-                        break;
-                    case "Vasko":
-                    case "Emo":
-                    case "Mitko":
-                    case "Gosho":
-                    case "Magi":
-                    case "Nad.T":
-                        if(Player.cooldownKills >= cooldown){
-                            Player.cooldownKills = 0;
-                            GUIText.replaceText("Ability", "Ability (E): " + Player.ability + " (Ready)");
-                            Player.abilityOnCooldown = false;
-                        }
-                        break;
-                    case "Lora":
-                    case "Vladi":
-                        if(Player.playerKills >= 3){
-                            Player.abilityInUse = false;
-                            Player.playerKills = 0;
-                            GUIText.replaceText("Ability", "Ability (E): " + Player.ability + " (Cooldown " + Player.abilityCooldownKills + " kills left)");
-                            Player.abilityOnCooldown = true;
-                        }else if(Player.cooldownKills >= cooldown){
-                            Player.cooldownKills = 0;
-                            GUIText.replaceText("Ability", "Ability (E): " + Player.ability + " (Ready)");
-                            Player.abilityOnCooldown = false;
-                        }
-                        break;
-                }
-            }
         }
         if(checkPlayerCollision(enemy)){
             Entity.deleteEntityCache.add(enemy);
             Player.health--;
+            if(Player.abilityOnCooldown && !Player.abilityInUse){
+                Player.cooldownKills++;
+                GUIText.replaceText("Ability", "Ability (E): " + Player.ability + " (Cooldown " + (Player.abilityCooldownKills - Player.playerCooldownStat - Player.cooldownKills) + " kills left)");
+            }
             GUIText.replaceText("Health: ", "Health: " + Player.health);
             if(Player.health == 0){
                 Player.health = Player.MAX_HEALTH;
@@ -241,7 +203,7 @@ public class EnemyEntity extends Entity{
         }
     }
 
-    public void pathFindertick(Entity target, Entity enemy, boolean reversed, float speed){
+    public void pathFindertick(Entity target, EnemyEntity enemy, boolean reversed, float speed){
         float deltaX = speed, deltaZ = speed;
         Location enemyLoc = enemy.getPosition();
         Location targetLoc = target.getPosition();
@@ -276,15 +238,108 @@ public class EnemyEntity extends Entity{
 
     }
 
-    public void hurtEnemy(float damage){
-        this.health -= damage;
+    public void hurtEnemy(float damage, EnemyEntity enemy){
+        if(Player.playableCharacter.equalsIgnoreCase("emo") && Player.waveTest % 3 == 0) {
+          this.health -= damage * 2;
+        }else {
+            this.health -= damage;
+        }
+        if(!enemy.stunned){
+            this.seperateSpeed = Speed - (Speed / 10);
+            enemy.stunned = true;
+        }
+        if(Player.currentMonth.equalsIgnoreCase("June")){
+            for(int i = 0; i < 10; i++){
+                int randomX = ThreadLocalRandom.current().nextInt(-50,  50 + 1);
+                int randomZ = ThreadLocalRandom.current().nextInt(-50, 50 + 1);
+                int randomY = ThreadLocalRandom.current().nextInt(-50,50 + 1);
+                new Particle(this.getPosition().toVector3f(), new Vector3f(randomX,randomY,randomZ), 1,5,2F,0, Main.particleTexture.get("Fire"));
+            }
+            return;
+        }
         for(int i = 0; i < 10; i++){
             int randomX = ThreadLocalRandom.current().nextInt(-50,  50 + 1);
             int randomZ = ThreadLocalRandom.current().nextInt(-50, 50 + 1);
             int randomY = ThreadLocalRandom.current().nextInt(-50,50 + 1);
-            new Particle(this.getPosition().toVector3f(), new Vector3f(randomX,randomY,randomZ), 1,5,3F,0);
+            new Particle(this.getPosition().toVector3f(), new Vector3f(randomX,randomY,randomZ), 1,5,5F,0, Main.particleTexture.get("Fire"));
+        }
+        if(this.health <= 0){
+            onDeath(enemy);
         }
     }
+
+    public void onDeath(EnemyEntity enemy){
+        if(Player.playableCharacter.equalsIgnoreCase("ceco")){
+            cecoAbility();
+        }
+        int cooldown = Player.abilityCooldownKills - Player.playerCooldownStat;
+        Player.addCoin(Player.playerCoinGainStat + 1);
+        GUIText.replaceText(":Coins", Math.round(Math.floor(Player.playerCoins)) + " :Coins");
+        for(int i = 0; i < 10; i++){
+            int randomX = ThreadLocalRandom.current().nextInt(-50,  50 + 1);
+            int randomZ = ThreadLocalRandom.current().nextInt(-50, 50 + 1);
+            int randomY = ThreadLocalRandom.current().nextInt(-50,50 + 1);
+            new Particle(enemy.getPosition().toVector3f(), new Vector3f(randomX,randomY,randomZ), 1,5,1F,0, Main.particleTexture.get("Fire"));
+        }
+        Entity.deleteEntityCache.add(enemy);
+        if(Player.abilityInUse){
+            Player.playerKills++;
+        }
+        if(Player.abilityOnCooldown && !Player.abilityInUse){
+            Player.cooldownKills++;
+            if(Player.playableCharacter.equalsIgnoreCase("mitko")){
+                int random = ThreadLocalRandom.current().nextInt(0,4+1);
+                if(random == 3){
+                    Player.cooldownKills++;
+                }
+            }
+            GUIText.replaceText("Ability", "Ability (E): " + Player.ability + " (Cooldown " + (cooldown - Player.cooldownKills) + " kills left)");
+        }
+        switch(Player.playableCharacter){
+            case "Nino":
+                if(Player.playerKills >= 2){
+                    Player.abilityInUse = false;
+                    Player.playerKills = 0;
+                }else if(Player.cooldownKills >= cooldown){
+                    Player.cooldownKills = 0;
+                    GUIText.replaceText("Ability", "Ability (E): " + Player.ability + " (Ready)");
+                    Player.abilityOnCooldown = false;
+                }
+                break;
+            case "Vasko":
+            case "Emo":
+            case "Mitko":
+            case "Gosho":
+            case "Magi":
+            case "Nad.T":
+                if(Player.cooldownKills >= cooldown){
+                    Player.cooldownKills = 0;
+                    GUIText.replaceText("Ability", "Ability (E): " + Player.ability + " (Ready)");
+                    Player.abilityOnCooldown = false;
+                }
+                break;
+            case "Lora":
+            case "Vladi":
+                if(Player.playerKills >= 3){
+                    Player.abilityInUse = false;
+                    Player.playerKills = 0;
+                    GUIText.replaceText("Ability", "Ability (E): " + Player.ability + " (Cooldown " + Player.abilityCooldownKills + " kills left)");
+                    Player.abilityOnCooldown = true;
+                }else if(Player.cooldownKills >= cooldown){
+                    Player.cooldownKills = 0;
+                    GUIText.replaceText("Ability", "Ability (E): " + Player.ability + " (Ready)");
+                    Player.abilityOnCooldown = false;
+                }
+                break;
+        }
+    }
+
+    public float getSeperateSpeed(){
+        return seperateSpeed;
+    }
+
+
+
 
 
 

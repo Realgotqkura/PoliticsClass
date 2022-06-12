@@ -1,5 +1,6 @@
 package com.realgotqkura.guis;
 
+import com.realgotqkura.data.SaveableData;
 import com.realgotqkura.engine.DisplayManager;
 import com.realgotqkura.fontMeshCreator.GUIText;
 import com.realgotqkura.main.Main;
@@ -93,13 +94,42 @@ public class GUIS {
         slotTextures.put(40, new GuiTexture(Main.loader.loadTexture("VladiResized"), playerInventoryGUIs.get(40).getPosition(), new Vector2f(0.05F, 0.06F), new RotationVector(0,0,0), "Vladi"));
         slotTextures.put(39, new GuiTexture(Main.loader.loadTexture("GoshoResized"), playerInventoryGUIs.get(39).getPosition(), new Vector2f(0.05F, 0.06F), new RotationVector(0,0,0), "Gosho"));
         slotTextures.put(38, new GuiTexture(Main.loader.loadTexture("LoraResized"), playerInventoryGUIs.get(38).getPosition(), new Vector2f(0.05F, 0.06F), new RotationVector(0,0,0), "Lora"));
-        slotTextures.put(37, new GuiTexture(Main.loader.loadTexture("EmoResized"), playerInventoryGUIs.get(37).getPosition(), new Vector2f(0.05F, 0.06F), new RotationVector(0,0,0), "Emo"));
-        slotTextures.put(36, new GuiTexture(Main.loader.loadTexture("VaskoResized"), playerInventoryGUIs.get(36).getPosition(), new Vector2f(0.05F, 0.06F), new RotationVector(0,0,0), "Vasko"));
-        slotTextures.put(35, new GuiTexture(Main.loader.loadTexture("Ceco_Resized"), playerInventoryGUIs.get(35).getPosition(), new Vector2f(0.05F, 0.06F), new RotationVector(0,0,0), "Ceco"));
-        slotTextures.put(34, new GuiTexture(Main.loader.loadTexture("Lubumira_Resized"), playerInventoryGUIs.get(34).getPosition(), new Vector2f(0.05F, 0.06F), new RotationVector(0,0,0), "Lubumira"));
-        slotTextures.put(33, new GuiTexture(Main.loader.loadTexture("Magi_Resized"), playerInventoryGUIs.get(33).getPosition(), new Vector2f(0.05F, 0.06F), new RotationVector(0,0,0), "Magi"));
-        slotTextures.put(32, new GuiTexture(Main.loader.loadTexture("NadT_Resized"), playerInventoryGUIs.get(32).getPosition(), new Vector2f(0.05F, 0.06F), new RotationVector(0,0,0), "NadT"));
-
+        //Unlockables
+        if(SaveableData.EMO > 0) {
+            slotTextures.put(37, new GuiTexture(Main.loader.loadTexture("EmoResized"), playerInventoryGUIs.get(37).getPosition(), new Vector2f(0.05F, 0.06F), new RotationVector(0, 0, 0), "Emo"));
+        }else{
+            slotTextures.put(37, new GuiTexture(Main.loader.loadTexture("EmoLocked"), playerInventoryGUIs.get(37).getPosition(), new Vector2f(0.05F, 0.06F), new RotationVector(0, 0, 0), "Emo"));
+        }
+        if(SaveableData.VASKO > 0){
+            slotTextures.put(36, new GuiTexture(Main.loader.loadTexture("VaskoResized"), playerInventoryGUIs.get(36).getPosition(), new Vector2f(0.05F, 0.06F), new RotationVector(0,0,0), "Vasko"));
+        }else{
+            slotTextures.put(36, new GuiTexture(Main.loader.loadTexture("VaskoLocked"), playerInventoryGUIs.get(36).getPosition(), new Vector2f(0.05F, 0.06F), new RotationVector(0,0,0), "Vasko"));
+        }
+        if(SaveableData.DINAMIXO > 0){
+            slotTextures.put(35, new GuiTexture(Main.loader.loadTexture("Ceco_Resized"), playerInventoryGUIs.get(35).getPosition(), new Vector2f(0.05F, 0.06F), new RotationVector(0,0,0), "Ceco"));
+        }else{
+            slotTextures.put(35, new GuiTexture(Main.loader.loadTexture("CecoLocked"), playerInventoryGUIs.get(35).getPosition(), new Vector2f(0.05F, 0.06F), new RotationVector(0,0,0), "Ceco"));
+        }
+        if(SaveableData.LUBUMIRA > 0){
+            slotTextures.put(34, new GuiTexture(Main.loader.loadTexture("LubumiraResized"), playerInventoryGUIs.get(34).getPosition(), new Vector2f(0.05F, 0.06F), new RotationVector(0,0,0), "Lubumira"));
+        }else{
+            slotTextures.put(34, new GuiTexture(Main.loader.loadTexture("LubumiraLocked"), playerInventoryGUIs.get(34).getPosition(), new Vector2f(0.05F, 0.06F), new RotationVector(0,0,0), "Lubumira"));
+        }
+        if(SaveableData.MAGI > 0){
+            slotTextures.put(33, new GuiTexture(Main.loader.loadTexture("MagiResized"), playerInventoryGUIs.get(33).getPosition(), new Vector2f(0.05F, 0.06F), new RotationVector(0,0,0), "Magi"));
+        }else{
+            slotTextures.put(33, new GuiTexture(Main.loader.loadTexture("MagiLocked"), playerInventoryGUIs.get(33).getPosition(), new Vector2f(0.05F, 0.06F), new RotationVector(0,0,0), "Magi"));
+        }
+        if(SaveableData.NAD_T > 0){
+            slotTextures.put(32, new GuiTexture(Main.loader.loadTexture("NadTResized"), playerInventoryGUIs.get(32).getPosition(), new Vector2f(0.05F, 0.06F), new RotationVector(0,0,0), "NadT"));
+        }else{
+            slotTextures.put(32, new GuiTexture(Main.loader.loadTexture("NadTLocked"), playerInventoryGUIs.get(32).getPosition(), new Vector2f(0.05F, 0.06F), new RotationVector(0,0,0), "NadT"));
+        }
+        if(SaveableData.KRISTIAN > 0){
+            slotTextures.put(31, new GuiTexture(Main.loader.loadTexture("KristianResized"), playerInventoryGUIs.get(31).getPosition(), new Vector2f(0.05F, 0.06F), new RotationVector(0,0,0), "Kristian"));
+        }else{
+            slotTextures.put(31, new GuiTexture(Main.loader.loadTexture("KristianLocked"), playerInventoryGUIs.get(31).getPosition(), new Vector2f(0.05F, 0.06F), new RotationVector(0,0,0), "Kristian"));
+        }
     }
 
     public static void closePlayerInventory(){
